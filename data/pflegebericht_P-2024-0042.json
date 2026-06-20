@@ -1,0 +1,74 @@
+[
+  {
+    "id": "pb1",
+    "datum": "2026-06-20",
+    "uhrzeit": "08:15",
+    "kategorie": "Beatmung",
+    "text": "Beatmung regelgerecht. Astral 150 läuft störungsfrei. Leckage 8 L/min, im Normbereich. SpO₂ stabil 95–97%. TK (Shiley 8.0) ohne Auffälligkeiten, Cuffdruck 22 cmH₂O.",
+    "kuerzel": "AQ"
+  },
+  {
+    "id": "pb2",
+    "datum": "2026-06-20",
+    "uhrzeit": "07:30",
+    "kategorie": "Pflege",
+    "text": "GKP durchgeführt. Haut intakt, keine Rötungen oder Druckstellen. Mundpflege mit Chlorhexidin-Lösung. Lagerungswechsel 30° rechts um 07:00 Uhr.",
+    "kuerzel": "AQ"
+  },
+  {
+    "id": "pb3",
+    "datum": "2026-06-19",
+    "uhrzeit": "14:30",
+    "kategorie": "Besonderheit",
+    "text": "SpO₂-Abfall auf 91% bei Lagerungswechsel um 14:00 Uhr. O₂-Gabe auf 3 L/min erhöht. SpO₂ nach 10 Min. wieder bei 95%. Absaugung: weißliches, zähes Sekret. Dr. Hoffmann informiert.",
+    "kuerzel": "AQ"
+  },
+  {
+    "id": "pb4",
+    "datum": "2026-06-19",
+    "uhrzeit": "10:00",
+    "kategorie": "Allgemein",
+    "text": "Patient wach und aufmerksam. Kommuniziert über Augensteuerung. Stimmung ausgeglichen. Ehefrau Maria zu Besuch. Patient äußert, gut geschlafen zu haben.",
+    "kuerzel": "SK"
+  },
+  {
+    "id": "pb5",
+    "datum": "2026-06-18",
+    "uhrzeit": "09:00",
+    "kategorie": "Arzt informiert",
+    "text": "Dr. Hoffmann über erhöhte Sekretmenge informiert. Empfehlung: Inhalation auf 4x täglich erhöhen, Vitalzeichen engmaschig kontrollieren. Laborentnahme für Montag angeordnet.",
+    "kuerzel": "AQ"
+  },
+  {
+    "id": "pb6",
+    "datum": "2026-06-17",
+    "uhrzeit": "08:00",
+    "kategorie": "Medikamente",
+    "text": "Medikamentengabe 07:00 Uhr: Baclofen 10 mg, Riluzol 50 mg (nüchtern), Pantoprazol 40 mg durchgeführt. Einnahme via Löffel (püriert). Keine Schluckprobleme. Lorazepam 0,5 mg für 22:00 bereitgestellt.",
+    "kuerzel": "AQ"
+  },
+  {
+    "id": "pb7",
+    "datum": "2026-06-16",
+    "uhrzeit": "16:00",
+    "kategorie": "Pflege",
+    "text": "TK-Pflege durchgeführt. TK-Kragen gewechselt. Stomabereich gereinigt, keine Rötung. Cuffdruck 22 cmH₂O. Nächster TK-Wechsel planmäßig 12.07.2026.",
+    "kuerzel": "SK"
+  },
+  {
+    "id": "pb8",
+    "datum": "2026-06-14",
+    "uhrzeit": "11:30",
+    "kategorie": "Allgemein",
+    "text": "Physiotherapie durch T. Müller durchgeführt. Passive Mobilisation aller Extremitäten, Atemübungen. Patient toleriert Therapie gut. SpO₂ während der Therapie stabil.",
+    "kuerzel": "AQ"
+  },
+  {
+    "id": "pb9_1781976620",
+    "datum": "2026-06-20",
+    "uhrzeit": "10:00",
+    "kategorie": "Allgemein",
+    "text": "Test",
+    "kuerzel": "AQ"
+  }
+]

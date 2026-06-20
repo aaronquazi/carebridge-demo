@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+{% block title %}SIS{% endblock %}
+{% block page_title %}Strukturierte Informationssammlung (SIS){% endblock %}
+{% block page_subtitle %}{{ patient.name }} · {{ patient.zimmer }}{% endblock %}
+
+{% block content %}
+<style>
+  .sis-progress-bar { height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; margin: 8px 0; }
+  .sis-progress-fill { height: 100%; border-radius: 4px; transition: width 0.3s; }
+  .sis-accordion { border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 10px; overflow: hidden; }
+  .sis-accordion-header {
+    display: flex; align-items: center; gap: 12px; padding: 14px 18px;
+    background: var(--surface); cursor: pointer; user-select: none;
+    border-bottom: 1px solid transparent; transition: background 0.15s;
+  }
+  .sis-accordion-header:hover { background: var(--surface-2); }
+  .sis-accordion-header.open { border-bottom-color: var(--border-soft); background: var(--surface-2); }
+  .sis-accordion-body { padding: 16px 18px; background: var(--surface); display: none; }
+  .sis-accordion-body.open { display: block; }
+  .sis-ampel {
+    width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0;
+    border: 1px solid rgba(0,0,0,0.12);
+  }
+  .ampel-gruen  { background: var(--green); }
+  .ampel-gelb   { background: var(--amber); }
+  .ampel-rot    { background: var(--red); }
+  .sis-nr { font-family: var(--mono); font-size: 11px; color: var(--ink-3); width: 18px; }
+  .sis-chevron { margin-left: auto; color: var(--ink-3); font-size: 12px; transition: transform 0.2s; }
+  .sis-chevron.open { transform: rotate(180deg); }
+  .sis-field-label {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px;
+    color: var(--ink-3); font-weight: 500; margin-bottom: 4px; margin-top: 12px;
+  }
+  .sis-field-label:first-child { margin-top: 0; }
+  .sis-textarea {
+    width: 100%; padding: 10px 12px; font-size: 13px; font-family: var(--sans);
+    border: 1px solid var(--border); border-radius: var(--radius);
+    background: var(--surface-2); color: var(--ink); resize: vertical; min-height: 72px;
+    transition: border-color 0.15s;
+  }
+  .sis-textarea:focus { outline: none; border-color: var(--blue-mid); background: var(--surface); }
+  .sis-save-btn {
+    padding: 9px 20px; background: var(--blue); color: #fff; border: none;
+    border-radius: var(--radius); font-size: 13px; font-weight: 500; cursor: pointer;
+    transition: background 0.15s;
+  }
+  .sis-save-btn:hover { background: var(--blue-mid); }
+  .legend-row { display: flex; align-items: center; gap: 16px; font-size: 12px; color: var(--ink-3); }
+  .legend-item { display: flex; align-items: center; gap: 6px; }
+</style>
+
+<!-- Progress Header -->
+<div class="card mb-16">
+  <div class="card-body" style="display:flex;align-items:center;justify-content:space-between;gap:20px">
+    <div style="flex:1">
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+        <span class="fw-500 text-sm">Fortschritt SIS</span>
+        <span class="text-sm text-muted" id="progress-label">{{ ausgefuellt }}/6 Themenfelder ausgefüllt</span>
+      </div>
+      <div class="sis-progress-bar">
+        <div class="sis-progress-fill" id="progress-fill"
+             style="width:{{ (ausgefuellt / 6 * 100) | round | int }}%;
+                    background:{% if ausgefuellt == 6 %}var(--green){% elif ausgefuellt >= 3 %}var(--amber){% else %}var(--red){% endif %}"></div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px">
+      {% if letzte_aktualisierung %}
+      <span class="text-xs text-muted">Zuletzt: {{ letzte_aktualisierung }}</span>
+      {% endif %}
+      <div class="legend-row">
+        <div class="legend-item"><div class="sis-ampel ampel-gruen"></div> Ausgefüllt</div>
+        <div class="legend-item"><div class="sis-ampel ampel-gelb"></div> Teilweise</div>
+        <div class="legend-item"><div class="sis-ampel ampel-rot"></div> Leer</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="warn-banner mb-16" style="font-size:12px">
+  ⚠ DEMO — Alle Inhalte sind fiktiv und dienen ausschließlich der Demonstration.
+</div>
+
+<!-- Themenfelder -->
+{% for key, titel in sis_felder %}
+{% set tf = sis.get(key, {}) %}
+{% set sb = tf.get('selbstbeschreibung', '') %}
+{% set fe = tf.get('fachliche_einschaetzung', '') %}
+{% set ma = tf.get('massnahmen', '') %}
+{% if fe and sb and ma %}{% set ampel_cls = 'ampel-gruen' %}
+{% elif fe or sb or ma %}{% set ampel_cls = 'ampel-gelb' %}
+{% else %}{% set ampel_cls = 'ampel-rot' %}{% endif %}
+<div class="sis-accordion" id="acc-{{ key }}">
+  <div class="sis-accordion-header" onclick="toggleAccordion('{{ key }}')" id="hdr-{{ key }}">
+    <div class="sis-ampel {{ ampel_cls }}" id="ampel-{{ key }}"></div>
+    <span class="sis-nr">{{ loop.index }}</span>
+    <span style="font-size:13px;font-weight:500">{{ titel }}</span>
+    <span class="sis-chevron" id="chv-{{ key }}">▼</span>
+  </div>
+  <div class="sis-accordion-body {% if loop.first %}open{% endif %}" id="body-{{ key }}">
+    <div class="sis-field-label">Selbstbeschreibung des Patienten</div>
+    <textarea class="sis-textarea" id="sb-{{ key }}" rows="3"
+      placeholder="Was sagt der Patient selbst zu diesem Bereich?">{{ sb }}</textarea>
+
+    <div class="sis-field-label">Fachliche Einschätzung der Pflegefachperson</div>
+    <textarea class="sis-textarea" id="fe-{{ key }}" rows="4"
+      placeholder="Pflegefachliche Beurteilung und Beobachtungen...">{{ fe }}</textarea>
+
+    <div class="sis-field-label">Maßnahmen</div>
+    <textarea class="sis-textarea" id="ma-{{ key }}" rows="3"
+      placeholder="Konkrete Pflegemaßnahmen und Interventionen...">{{ ma }}</textarea>
+  </div>
+</div>
+{% endfor %}
+
+<!-- Save Footer -->
+<div style="display:flex;justify-content:space-between;align-items:center;margin-top:20px">
+  <div id="sis-save-status" class="text-sm text-muted"></div>
+  <button class="sis-save-btn" onclick="saveSIS()">💾 SIS speichern</button>
+</div>
+
+<!-- Flash -->
+<div id="sis-flash" style="display:none;position:fixed;bottom:24px;right:24px;z-index:500;
+  padding:12px 20px;border-radius:var(--radius);font-size:13px;font-weight:500;
+  background:var(--green);color:#fff;box-shadow:0 4px 16px rgba(0,0,0,0.15)"></div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const SIS_KEYS = {{ sis_felder | map(attribute=0) | list | tojson }};
+
+  function toggleAccordion(key) {
+    const body = document.getElementById('body-' + key);
+    const hdr  = document.getElementById('hdr-'  + key);
+    const chv  = document.getElementById('chv-'  + key);
+    const isOpen = body.classList.contains('open');
+    body.classList.toggle('open', !isOpen);
+    hdr.classList.toggle('open', !isOpen);
+    chv.classList.toggle('open', !isOpen);
+  }
+
+  // Open first by default
+  document.getElementById('hdr-{{ sis_felder[0][0] }}').classList.add('open');
+  document.getElementById('chv-{{ sis_felder[0][0] }}').classList.add('open');
+
+  function getAmpelClass(sb, fe, ma) {
+    if (sb.trim() && fe.trim() && ma.trim()) return 'ampel-gruen';
+    if (sb.trim() || fe.trim() || ma.trim()) return 'ampel-gelb';
+    return 'ampel-rot';
+  }
+
+  function updateProgress() {
+    let count = 0;
+    SIS_KEYS.forEach(key => {
+      const fe = (document.getElementById('fe-'+key) || {value:''}).value;
+      if (fe.trim()) count++;
+    });
+    const pct = Math.round(count / 6 * 100);
+    const fill = document.getElementById('progress-fill');
+    fill.style.width = pct + '%';
+    fill.style.background = count === 6 ? 'var(--green)' : count >= 3 ? 'var(--amber)' : 'var(--red)';
+    document.getElementById('progress-label').textContent = count + '/6 Themenfelder ausgefüllt';
+    return count;
+  }
+
+  // Live ampel update on input
+  SIS_KEYS.forEach(key => {
+    ['sb','fe','ma'].forEach(prefix => {
+      const el = document.getElementById(prefix + '-' + key);
+      if (!el) return;
+      el.addEventListener('input', () => {
+        const sb = document.getElementById('sb-'+key).value;
+        const fe = document.getElementById('fe-'+key).value;
+        const ma = document.getElementById('ma-'+key).value;
+        const ampel = document.getElementById('ampel-'+key);
+        ampel.className = 'sis-ampel ' + getAmpelClass(sb, fe, ma);
+        updateProgress();
+      });
+    });
+  });
+
+  async function saveSIS() {
+    const themenfelder = {};
+    SIS_KEYS.forEach(key => {
+      themenfelder[key] = {
+        selbstbeschreibung:    (document.getElementById('sb-'+key) || {value:''}).value,
+        fachliche_einschaetzung: (document.getElementById('fe-'+key) || {value:''}).value,
+        massnahmen:            (document.getElementById('ma-'+key) || {value:''}).value,
+      };
+    });
+    const r = await fetch('/api/sis/speichern', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({themenfelder})
+    });
+    if (r.ok) {
+      const flash = document.getElementById('sis-flash');
+      flash.textContent = '✓ SIS gespeichert';
+      flash.style.display = 'block';
+      document.getElementById('sis-save-status').textContent = 'Zuletzt gespeichert: ' + new Date().toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'});
+      setTimeout(() => { flash.style.display = 'none'; }, 2500);
+    }
+  }
+</script>
+{% endblock %}

@@ -1,0 +1,123 @@
+WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5001
+ * Running on http://192.168.1.111:5001
+Press CTRL+C to quit
+[2026-06-20 11:46:20,241] ERROR in app: Exception on /therapien [GET]
+Traceback (most recent call last):
+  File "C:\Users\aaron\AppData\Roaming\Python\Python311\site-packages\flask\app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aaron\AppData\Roaming\Python\Python311\site-packages\flask\app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aaron\AppData\Roaming\Python\Python311\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aaron\AppData\Roaming\Python\Python311\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aaron\Desktop\WebApp_Projekt\WebApp_Projekt\Apps\carebridge\carebridge\app.py", line 1005, in therapien
+    return render_template("therapien.html",
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aaron\AppData\Roaming\Python\Python311\site-packages\flask\templating.py", line 150, in render_template
+    template = app.jinja_env.get_or_select_template(template_name_or_list)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aaron\AppData\Roaming\Python\Python311\site-packages\jinja2\environment.py", line 1087, in get_or_select_template
+    return self.get_template(template_name_or_list, parent, globals)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aaron\AppData\Roaming\Python\Python311\site-packages\jinja2\environment.py", line 1016, in get_template
+    return self._load_template(name, globals)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aaron\AppData\Roaming\Python\Python311\site-packages\jinja2\environment.py", line 975, in _load_template
+    template = self.loader.load(self, name, self.make_globals(globals))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aaron\AppData\Roaming\Python\Python311\site-packages\jinja2\loaders.py", line 138, in load
+    code = environment.compile(source, name, filename)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aaron\AppData\Roaming\Python\Python311\site-packages\jinja2\environment.py", line 771, in compile
+    self.handle_exception(source=source_hint)
+  File "C:\Users\aaron\AppData\Roaming\Python\Python311\site-packages\jinja2\environment.py", line 942, in handle_exception
+    raise rewrite_traceback_stack(source=source)
+  File "C:\Users\aaron\Desktop\WebApp_Projekt\WebApp_Projekt\Apps\carebridge\carebridge\templates\therapien.html", line 138, in template
+    <button class="btn-del-sm" onclick="confirmDelete('eintrag','{{ e.id }}','Eintrag vom {{ e.datum | replace(\"-\", \".\") }}')">\U0001f5d1 Löschen</button>
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
+jinja2.exceptions.TemplateSyntaxError: unexpected char '\\' at 9059
+127.0.0.1 - - [20/Jun/2026 11:46:20] "GET /therapien HTTP/1.1" 500 -
+127.0.0.1 - - [20/Jun/2026 11:46:20] "GET /protokolle HTTP/1.1" 200 -
+127.0.0.1 - - [20/Jun/2026 11:46:20] "GET /admin HTTP/1.1" 200 -
+127.0.0.1 - - [20/Jun/2026 11:46:20] "GET /dashboard HTTP/1.1" 200 -
+127.0.0.1 - - [20/Jun/2026 11:46:20] "DELETE /api/therapie/eintrag/TEST HTTP/1.1" 200 -
+127.0.0.1 - - [20/Jun/2026 11:46:20] "DELETE /api/therapie/verordnung/TEST HTTP/1.1" 200 -
+[2026-06-20 11:46:29,614] ERROR in app: Exception on /therapien [GET]
+Traceback (most recent call last):
+  File "C:\Users\aaron\AppData\Roaming\Python\Python311\site-packages\flask\app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aaron\AppData\Roaming\Python\Python311\site-packages\flask\app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aaron\AppData\Roaming\Python\Python311\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aaron\AppData\Roaming\Python\Python311\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aaron\Desktop\WebApp_Projekt\WebApp_Projekt\Apps\carebridge\carebridge\app.py", line 1005, in therapien
+    return render_template("therapien.html",
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aaron\AppData\Roaming\Python\Python311\site-packages\flask\templating.py", line 150, in render_template
+    template = app.jinja_env.get_or_select_template(template_name_or_list)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aaron\AppData\Roaming\Python\Python311\site-packages\jinja2\environment.py", line 1087, in get_or_select_template
+    return self.get_template(template_name_or_list, parent, globals)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aaron\AppData\Roaming\Python\Python311\site-packages\jinja2\environment.py", line 1016, in get_template
+    return self._load_template(name, globals)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aaron\AppData\Roaming\Python\Python311\site-packages\jinja2\environment.py", line 975, in _load_template
+    template = self.loader.load(self, name, self.make_globals(globals))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aaron\AppData\Roaming\Python\Python311\site-packages\jinja2\loaders.py", line 138, in load
+    code = environment.compile(source, name, filename)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aaron\AppData\Roaming\Python\Python311\site-packages\jinja2\environment.py", line 771, in compile
+    self.handle_exception(source=source_hint)
+  File "C:\Users\aaron\AppData\Roaming\Python\Python311\site-packages\jinja2\environment.py", line 942, in handle_exception
+    raise rewrite_traceback_stack(source=source)
+  File "C:\Users\aaron\Desktop\WebApp_Projekt\WebApp_Projekt\Apps\carebridge\carebridge\templates\therapien.html", line 138, in template
+    <button class="btn-del-sm" onclick="confirmDelete('eintrag','{{ e.id }}','Eintrag vom {{ e.datum | replace(\"-\", \".\") }}')">\U0001f5d1 Löschen</button>
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
+jinja2.exceptions.TemplateSyntaxError: unexpected char '\\' at 9059
+127.0.0.1 - - [20/Jun/2026 11:46:29] "GET /therapien HTTP/1.1" 500 -
+127.0.0.1 - - [20/Jun/2026 11:46:58] "GET /therapien HTTP/1.1" 200 -
+127.0.0.1 - - [20/Jun/2026 11:47:12] "GET /therapien HTTP/1.1" 200 -
+127.0.0.1 - - [20/Jun/2026 11:47:12] "DELETE /api/therapie/eintrag/e6_1781947713 HTTP/1.1" 200 -
+127.0.0.1 - - [20/Jun/2026 11:47:12] "GET /protokolle HTTP/1.1" 200 -
+127.0.0.1 - - [20/Jun/2026 11:47:12] "GET /admin HTTP/1.1" 200 -
+127.0.0.1 - - [20/Jun/2026 11:48:31] "GET /admin HTTP/1.1" 200 -
+127.0.0.1 - - [20/Jun/2026 11:48:31] "GET /api/config HTTP/1.1" 200 -
+127.0.0.1 - - [20/Jun/2026 11:48:34] "GET /api/config/patienten HTTP/1.1" 200 -
+127.0.0.1 - - [20/Jun/2026 11:48:37] "POST /api/config/save HTTP/1.1" 200 -
+127.0.0.1 - - [20/Jun/2026 11:48:37] "GET /admin?saved=1 HTTP/1.1" 200 -
+127.0.0.1 - - [20/Jun/2026 11:48:37] "GET /api/config HTTP/1.1" 200 -
+127.0.0.1 - - [20/Jun/2026 11:48:39] "GET /api/config/patienten HTTP/1.1" 200 -
+127.0.0.1 - - [20/Jun/2026 11:49:03] "POST /api/patient/hinzufuegen HTTP/1.1" 200 -
+127.0.0.1 - - [20/Jun/2026 11:49:03] "GET /admin?saved=1&neu=P-2026-0003&name=Aaron HTTP/1.1" 200 -
+127.0.0.1 - - [20/Jun/2026 11:49:03] "GET /api/config HTTP/1.1" 200 -
+127.0.0.1 - - [20/Jun/2026 11:49:05] "GET /api/config/patienten HTTP/1.1" 200 -
+127.0.0.1 - - [20/Jun/2026 11:49:09] "POST /api/config/save HTTP/1.1" 200 -
+127.0.0.1 - - [20/Jun/2026 11:49:09] "GET /admin?saved=1 HTTP/1.1" 200 -
+127.0.0.1 - - [20/Jun/2026 11:49:09] "GET /api/config HTTP/1.1" 200 -
+127.0.0.1 - - [20/Jun/2026 11:49:11] "GET /protokolle HTTP/1.1" 200 -
+127.0.0.1 - - [20/Jun/2026 11:49:17] "GET /protokolle HTTP/1.1" 200 -
+127.0.0.1 - - [20/Jun/2026 11:49:33] "GET /therapien HTTP/1.1" 200 -
+127.0.0.1 - - [20/Jun/2026 11:49:37] "DELETE /api/therapie/eintrag/e5_1781946470 HTTP/1.1" 200 -
+127.0.0.1 - - [20/Jun/2026 11:49:52] "POST /api/therapie/eintrag HTTP/1.1" 200 -
+127.0.0.1 - - [20/Jun/2026 11:49:52] "GET /therapien HTTP/1.1" 200 -
+127.0.0.1 - - [20/Jun/2026 11:49:59] "DELETE /api/therapie/eintrag/e5_1781946470 HTTP/1.1" 200 -
+127.0.0.1 - - [20/Jun/2026 11:50:05] "POST /api/therapie/eintrag HTTP/1.1" 200 -
+127.0.0.1 - - [20/Jun/2026 11:50:05] "GET /therapien HTTP/1.1" 200 -
+127.0.0.1 - - [20/Jun/2026 11:50:10] "DELETE /api/therapie/eintrag/e5_1781946470 HTTP/1.1" 200 -
+127.0.0.1 - - [20/Jun/2026 19:02:50] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [20/Jun/2026 19:04:23] "GET /dashboard HTTP/1.1" 200 -

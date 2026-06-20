@@ -1,0 +1,325 @@
+{% extends "base.html" %}
+{% block title %}Arztübergabe{% endblock %}
+{% block page_title %}Arztübergabe{% endblock %}
+{% block page_subtitle %}{{ patient.name }} · Erstellt {{ heute_str }}{% endblock %}
+
+{% block content %}
+<style>
+  .az-section { background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:16px;overflow:hidden }
+  .az-head { padding:11px 16px;background:var(--surface-2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between }
+  .az-head-title { font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--ink-2) }
+  .az-body { padding:14px 16px }
+  .az-grid-2 { display:grid;grid-template-columns:1fr 1fr;gap:10px 24px }
+  .az-grid-3 { display:grid;grid-template-columns:repeat(3,1fr);gap:10px 16px }
+  .az-field-label { font-size:10px;color:var(--ink-3);margin-bottom:2px;text-transform:uppercase;letter-spacing:0.5px }
+  .az-field-value { font-size:13px;color:var(--ink);font-weight:500 }
+  .stat-mini { background:var(--surface-2);border:1px solid var(--border-soft);border-radius:6px;padding:10px 14px;text-align:center }
+  .stat-mini-val { font-size:22px;font-weight:600;font-family:var(--mono);color:var(--ink) }
+  .stat-mini-label { font-size:10px;color:var(--ink-3);margin-top:3px }
+  .notfall-box { border:2px solid var(--red);border-radius:var(--radius);padding:14px 16px;margin-bottom:16px }
+  .notfall-title { font-size:12px;font-weight:700;color:var(--red);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;display:flex;align-items:center;gap:8px }
+  .notfall-block { margin-bottom:12px }
+  .notfall-block-title { font-size:11px;font-weight:600;color:var(--ink-2);margin-bottom:6px }
+  .notfall-block ol { padding-left:18px;font-size:12px;color:var(--ink-2) }
+  .notfall-block ol li { margin-bottom:3px }
+  .notfall-contacts { display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:10px }
+  .notfall-contact { background:#fff5f5;border:1px solid #FCA5A5;border-radius:4px;padding:6px 10px;font-size:11px;color:#991b1b }
+  .az-table { width:100%;border-collapse:collapse;font-size:12px }
+  .az-table th { background:var(--surface-2);padding:7px 10px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:0.7px;color:var(--ink-3);border-bottom:2px solid var(--border) }
+  .az-table td { padding:7px 10px;border-bottom:1px solid var(--border-soft) }
+  .az-table tr:last-child td { border-bottom:none }
+  .btn-print { background:var(--blue);color:#fff;border:none;border-radius:var(--radius);padding:8px 18px;font-size:12px;font-weight:500;cursor:pointer;font-family:var(--sans);display:flex;align-items:center;gap:6px }
+  .btn-print:hover { background:var(--blue-mid) }
+
+  @media print {
+    .nav,.topbar,.btn-print,#chart-section { display:none !important }
+    .main { margin-left:0 !important }
+    body { background:#fff;font-size:10px }
+    .az-section { box-shadow:none;break-inside:avoid }
+    .notfall-box { break-before:page }
+    #print-header { display:block !important }
+    #verlauf-table { display:block !important }
+    .content { padding:0 }
+  }
+</style>
+
+<!-- Druckheader (nur im Druck sichtbar) -->
+<div id="print-header" style="display:none;margin-bottom:16px;padding-bottom:12px;border-bottom:2px solid #0F1923">
+  <div style="font-size:18px;font-weight:700">CareBridge — Arztübergabe</div>
+  <div style="font-size:12px;color:#4A5568;margin-top:4px">
+    {{ patient.name }} · *{{ patient.geburtsdatum }} · {{ patient.diagnose }}
+  </div>
+  <div style="font-size:11px;color:#8A9BB0;margin-top:2px">
+    Erstellt am {{ heute_str }} von Aaron Quazi (Pflegefachmann) · Demo — Kein Medizinprodukt
+  </div>
+</div>
+
+<!-- Toolbar -->
+<div style="display:flex;justify-content:flex-end;margin-bottom:12px">
+  <button class="btn-print" onclick="window.print()">
+    <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+    Drucken / PDF
+  </button>
+</div>
+
+<!-- ABSCHNITT 1: Patientenkopf -->
+<div class="az-section">
+  <div class="az-head">
+    <span class="az-head-title">① Patientendaten</span>
+    <span class="badge badge-blue">{{ patient.id }}</span>
+  </div>
+  <div class="az-body">
+    <div class="az-grid-2" style="gap:12px 32px">
+      <div>
+        <div class="az-field-label">Patient</div>
+        <div class="az-field-value">{{ patient.name }}</div>
+      </div>
+      <div>
+        <div class="az-field-label">Geburtsdatum / Alter</div>
+        <div class="az-field-value">{{ patient.geburtsdatum }} · {{ patient.alter }} Jahre</div>
+      </div>
+      <div style="grid-column:1/-1">
+        <div class="az-field-label">Diagnose</div>
+        <div class="az-field-value">{{ patient.diagnose }}</div>
+      </div>
+      <div>
+        <div class="az-field-label">Beatmung seit</div>
+        <div class="az-field-value">{{ patient.beatmungspflichtig_seit }} · {{ verordnung.geraet }}</div>
+      </div>
+      <div>
+        <div class="az-field-label">Behandelnder Arzt</div>
+        <div class="az-field-value">{{ patient.arzt }}</div>
+      </div>
+      <div>
+        <div class="az-field-label">Zimmer / Station</div>
+        <div class="az-field-value">{{ patient.zimmer }} · {{ patient.station }}</div>
+      </div>
+      <div>
+        <div class="az-field-label">Erstellt von</div>
+        <div class="az-field-value">Aaron Quazi (Pflegefachmann) · {{ heute_str }}</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ABSCHNITT 2: Vitalwerte 14 Tage -->
+<div class="az-section">
+  <div class="az-head">
+    <span class="az-head-title">② Vitalwerte — letzte 14 Tage</span>
+    <span class="badge badge-gray">Demo-Statistik</span>
+  </div>
+  <div class="az-body">
+    <!-- Statistik-Kacheln -->
+    <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:16px">
+      <div class="stat-mini">
+        <div class="stat-mini-val">{{ spo2_gesamt_avg }}%</div>
+        <div class="stat-mini-label">SpO₂ Ø</div>
+      </div>
+      <div class="stat-mini">
+        <div class="stat-mini-val" style="color:var(--red)">{{ spo2_gesamt_min }}%</div>
+        <div class="stat-mini-label">SpO₂ min</div>
+      </div>
+      <div class="stat-mini">
+        <div class="stat-mini-val" style="color:var(--green)">{{ spo2_gesamt_max }}%</div>
+        <div class="stat-mini-label">SpO₂ max</div>
+      </div>
+      <div class="stat-mini">
+        <div class="stat-mini-val">{{ hf_gesamt_avg }}</div>
+        <div class="stat-mini-label">HF Ø /min</div>
+      </div>
+      <div class="stat-mini">
+        <div class="stat-mini-val" style="color:var(--red)">{{ hf_gesamt_min }}</div>
+        <div class="stat-mini-label">HF min</div>
+      </div>
+      <div class="stat-mini">
+        <div class="stat-mini-val" style="color:var(--amber)">{{ hf_gesamt_max }}</div>
+        <div class="stat-mini-label">HF max</div>
+      </div>
+    </div>
+
+    <!-- Chart (nur Bildschirm) -->
+    <div id="chart-section" style="margin-bottom:16px">
+      <canvas id="verlaufChart" height="70"></canvas>
+    </div>
+
+    <!-- Tabelle (Druck + Bildschirm) -->
+    <div id="verlauf-table">
+      <table class="az-table">
+        <thead>
+          <tr>
+            <th>Datum</th>
+            <th>SpO₂ min</th>
+            <th>SpO₂ max</th>
+            <th>SpO₂ Ø</th>
+            <th>HF Ø</th>
+            <th>BD sys Ø</th>
+            <th>AF Ø</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for v in verlauf %}
+          <tr>
+            <td class="mono">{{ v.datum }}</td>
+            <td style="color:{% if v.spo2_min < 90 %}var(--red){% else %}var(--ink){% endif %}">{{ v.spo2_min }}%</td>
+            <td>{{ v.spo2_max }}%</td>
+            <td style="font-weight:500">{{ v.spo2_avg }}%</td>
+            <td>{{ v.hf_avg }} /min</td>
+            <td>{{ v.bd_sys_avg }} mmHg</td>
+            <td>{{ v.af_avg }} /min</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ABSCHNITT 3: Medikamentenplan -->
+<div class="az-section">
+  <div class="az-head"><span class="az-head-title">③ Aktueller Medikamentenplan</span></div>
+  <div class="card-body" style="padding:0">
+    <table class="az-table">
+      <thead><tr><th>Medikament</th><th>Dosierung</th><th>Zeiten</th><th>Indikation</th><th>Form</th></tr></thead>
+      <tbody>
+        {% for m in medikamente %}
+        <tr>
+          <td style="font-weight:500">{{ m.name }}{% if m.hinweis %} <span style="font-size:10px;color:var(--red)">({{ m.hinweis }})</span>{% endif %}</td>
+          <td class="mono">{{ m.dosierung }}</td>
+          <td class="mono" style="font-size:11px">{{ m.zeiten | join(', ') }}</td>
+          <td style="font-size:11px;color:var(--ink-2)">{{ m.grund }}</td>
+          <td><span class="badge badge-gray" style="font-size:10px">{{ m.form }}</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ABSCHNITT 4: Beatmungsverordnung -->
+<div class="az-section">
+  <div class="az-head">
+    <span class="az-head-title">④ Beatmungsverordnung</span>
+    <span class="badge badge-gray">gültig bis {{ verordnung.gueltig_bis }}</span>
+  </div>
+  <div class="az-body">
+    <div class="az-grid-3" style="margin-bottom:14px">
+      <div>
+        <div class="az-field-label">Gerät / Modus</div>
+        <div class="az-field-value" style="font-size:12px">{{ verordnung.geraet }}<br><span style="font-weight:400;color:var(--ink-2)">{{ verordnung.modus }}</span></div>
+      </div>
+      {% for k,v in verordnung.parameter.items() %}
+      <div>
+        <div class="az-field-label">{{ k.replace('_',' ') }}</div>
+        <div class="az-field-value">{{ v }}</div>
+      </div>
+      {% endfor %}
+    </div>
+    <div style="font-size:11px;font-weight:600;color:var(--ink-3);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:8px">Alarmgrenzen</div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px">
+      {% for k,v in verordnung.alarmgrenzen.items() %}
+      <span style="background:var(--surface-2);border:1px solid var(--border);border-radius:4px;padding:3px 10px;font-size:11px;font-family:var(--mono)">{{ k }}: {{ v }}</span>
+      {% endfor %}
+    </div>
+    {% if verordnung.trachealkanüle.typ != 'NIV — Nasenmaske (kein TK)' %}
+    <div style="font-size:11px;font-weight:600;color:var(--ink-3);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:8px">Trachealkanüle</div>
+    <div class="az-grid-3" style="gap:8px">
+      <div><div class="az-field-label">Typ</div><div class="az-field-value" style="font-size:12px">{{ verordnung.trachealkanüle.typ }}</div></div>
+      <div><div class="az-field-label">Letzter Wechsel</div><div class="az-field-value" style="font-size:12px">{{ verordnung.trachealkanüle.letzter_wechsel }}</div></div>
+      <div><div class="az-field-label">Nächster Wechsel</div><div class="az-field-value" style="font-size:12px;color:var(--amber)">{{ verordnung.trachealkanüle.naechster_wechsel }}</div></div>
+    </div>
+    {% endif %}
+    <div style="margin-top:10px;font-size:11px;color:var(--ink-3)">{{ verordnung.bemerkung }}</div>
+  </div>
+</div>
+
+<!-- ABSCHNITT 5: Notfallplan -->
+<div class="notfall-box">
+  <div class="notfall-title">
+    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+    ⑤ Notfallplan
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+    <div class="notfall-block">
+      <div class="notfall-block-title">Bei SpO₂ &lt; 88%</div>
+      <ol>
+        <li>Beatmungsmaske / TK-Sitz prüfen</li>
+        <li>Leckage kontrollieren</li>
+        <li>Absaugen wenn Sekret vorhanden</li>
+        <li>FiO₂ erhöhen gemäß Verordnung</li>
+        <li>Arzt umgehend informieren</li>
+      </ol>
+    </div>
+    <div class="notfall-block">
+      <div class="notfall-block-title">Bei Beatmungsgerät-Alarm</div>
+      <ol>
+        <li>Alarmursache am Display ablesen</li>
+        <li>Schlauchsystem und Anschlüsse prüfen</li>
+        <li>Manuelle Beatmung bereitstellen (Ambu-Beutel)</li>
+        <li>Gerätehersteller-Hotline informieren</li>
+        <li>Pflegeleitung / Arzt benachrichtigen</li>
+      </ol>
+    </div>
+  </div>
+
+  <div style="margin-top:14px;font-size:11px;font-weight:600;color:#991b1b;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:8px">Notfallkontakte</div>
+  <div class="notfall-contacts">
+    <div class="notfall-contact"><strong>Arzt:</strong> {{ patient.arzt }} · 0151 XXXXXXXX</div>
+    <div class="notfall-contact"><strong>Pflegeleitung:</strong> Sandra Krause · 0152 XXXXXXXX</div>
+    <div class="notfall-contact"><strong>{{ verordnung.geraet.split('(')[0].strip() }}-Hotline:</strong> 0800 XXXXXXXX</div>
+    <div class="notfall-contact"><strong>Notarzt:</strong> 112</div>
+  </div>
+</div>
+
+<!-- Druckfooter -->
+<div style="text-align:center;font-size:10px;color:var(--ink-3);padding:8px">
+  Erstellt von Aaron Quazi · CareBridge Demo · Kein Medizinprodukt · Alle Daten fiktiv
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+const labels  = {{ verlauf | map(attribute='datum') | list | tojson }};
+const spo2avg = {{ verlauf | map(attribute='spo2_avg') | list | tojson }};
+const spo2min = {{ verlauf | map(attribute='spo2_min') | list | tojson }};
+const hfavg   = {{ verlauf | map(attribute='hf_avg')   | list | tojson }};
+
+new Chart(document.getElementById('verlaufChart'), {
+  type: 'line',
+  data: {
+    labels,
+    datasets: [
+      { label:'SpO₂ Ø (%)', data:spo2avg, borderColor:'#1A56DB', backgroundColor:'rgba(26,86,219,0.07)', borderWidth:2, pointRadius:3, tension:0.3, fill:true, yAxisID:'y' },
+      { label:'SpO₂ min (%)', data:spo2min, borderColor:'#FCA5A5', backgroundColor:'transparent', borderWidth:1.5, pointRadius:2, tension:0.3, borderDash:[4,3], yAxisID:'y' },
+      { label:'HF Ø (/min)', data:hfavg, borderColor:'#0D7A5C', backgroundColor:'transparent', borderWidth:2, pointRadius:3, tension:0.3, yAxisID:'y2' },
+      { type:'line', label:'SpO₂ Alarm 88%', data:labels.map(()=>88), borderColor:'#C0392B', borderWidth:1, borderDash:[5,4], pointRadius:0, yAxisID:'y', fill:false }
+    ]
+  },
+  options: {
+    responsive:true, maintainAspectRatio:true,
+    interaction:{mode:'index',intersect:false},
+    plugins:{
+      legend:{labels:{font:{family:'IBM Plex Sans',size:11},color:'#4A5568',boxWidth:12,padding:10}},
+      tooltip:{
+        backgroundColor:'#0F1923',
+        titleFont:{family:'IBM Plex Mono',size:10},bodyFont:{family:'IBM Plex Mono',size:11},
+        filter: item => item.dataset.label !== 'SpO₂ Alarm 88%'
+      }
+    },
+    scales:{
+      x:{ grid:{color:'#EAECF0'}, ticks:{font:{family:'IBM Plex Mono',size:10},color:'#8A9BB0'} },
+      y:{ min:82, max:100, position:'left',
+          title:{display:true,text:'SpO₂ (%)',font:{size:10},color:'#1A56DB'},
+          ticks:{font:{family:'IBM Plex Mono',size:10},color:'#8A9BB0'},
+          grid:{color:'#EAECF0'} },
+      y2:{ min:40, max:120, position:'right',
+           title:{display:true,text:'HF (/min)',font:{size:10},color:'#0D7A5C'},
+           ticks:{font:{family:'IBM Plex Mono',size:10},color:'#8A9BB0'},
+           grid:{drawOnChartArea:false} }
+    }
+  }
+});
+</script>
+{% endblock %}

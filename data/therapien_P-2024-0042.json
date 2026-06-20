@@ -1,0 +1,75 @@
+{
+  "verordnungen": [
+    {
+      "id": "t1",
+      "typ": "Physiotherapie",
+      "frequenz": "3x/Woche",
+      "therapeut": "T. Müller",
+      "seit": "2024-01-15",
+      "ziel": "Muskelerhalt und Atemtherapie"
+    },
+    {
+      "id": "t2",
+      "typ": "Ergotherapie",
+      "frequenz": "2x/Woche",
+      "therapeut": "S. Klein",
+      "seit": "2024-02-01",
+      "ziel": "Kommunikation und Alltagsaktivitäten"
+    },
+    {
+      "id": "t3",
+      "typ": "Logopädie",
+      "frequenz": "1x/Woche",
+      "therapeut": "M. Bauer",
+      "seit": "2024-03-10",
+      "ziel": "Schluck- und Kommunikationstherapie"
+    }
+  ],
+  "eintraege": [
+    {
+      "id": "e1",
+      "datum": "2026-06-19",
+      "uhrzeit": "10:00",
+      "typ": "Physiotherapie",
+      "therapeut": "T. Müller",
+      "bericht": "Atemübungen, passive Mobilisation beider Arme. Patient gut kooperativ. Keine Auffälligkeiten.",
+      "kuerzel": "AQ"
+    },
+    {
+      "id": "e2",
+      "datum": "2026-06-17",
+      "uhrzeit": "11:00",
+      "typ": "Ergotherapie",
+      "therapeut": "S. Klein",
+      "bericht": "Kommunikationstraining mit Augensteuerung. Fortschritte beim Buchstabieren erkennbar. Patient motiviert.",
+      "kuerzel": "AQ"
+    },
+    {
+      "id": "e3",
+      "datum": "2026-06-15",
+      "uhrzeit": "10:00",
+      "typ": "Physiotherapie",
+      "therapeut": "T. Müller",
+      "bericht": "Atemmuskeltraining und Vibrationstherapie. Patient toleriert Lagerung gut. SpO₂ stabil während gesamter Therapie.",
+      "kuerzel": "SK"
+    },
+    {
+      "id": "e4",
+      "datum": "2026-06-12",
+      "uhrzeit": "14:00",
+      "typ": "Logopädie",
+      "therapeut": "M. Bauer",
+      "bericht": "Schlucktherapie. Reflextestung durchgeführt. Empfehlung: Speisen weiterhin püriert reichen. Flüssigkeiten angedickt.",
+      "kuerzel": "AQ"
+    },
+    {
+      "id": "e5_1781946470",
+      "datum": "2026-06-20",
+      "uhrzeit": "11:04",
+      "typ": "Physiotherapie",
+      "therapeut": "dr Quazi",
+      "bericht": "alles läuft super",
+      "kuerzel": ""
+    }
+  ]
+}

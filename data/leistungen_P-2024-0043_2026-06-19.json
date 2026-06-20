@@ -1,0 +1,27 @@
+{
+  "GKP_06:30": {
+    "kuerzel": "SK",
+    "zeitstempel": "06:35",
+    "begruendung": ""
+  },
+  "MED_07:00": {
+    "kuerzel": "SK",
+    "zeitstempel": "07:05",
+    "begruendung": ""
+  },
+  "INH_08:00": {
+    "kuerzel": "SK",
+    "zeitstempel": "08:10",
+    "begruendung": ""
+  },
+  "VIT_08:15": {
+    "kuerzel": "SK",
+    "zeitstempel": "08:22",
+    "begruendung": ""
+  },
+  "LAG_10:00": {
+    "kuerzel": "SK",
+    "zeitstempel": "10:05",
+    "begruendung": ""
+  }
+}

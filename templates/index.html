@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CareBridge — Digitale Beatmungspflege</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Serif:ital,wght@0,400;1,300&display=swap" rel="stylesheet">
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'IBM Plex Sans',sans-serif;background:#F0F2F5;color:#0F1923;min-height:100vh;display:flex;flex-direction:column}
+
+    /* ── HERO ── */
+    .hero{
+      background:#0F1923;
+      padding:80px 40px 72px;
+      text-align:center;
+      position:relative;
+      overflow:hidden;
+    }
+    .hero::before{
+      content:'';position:absolute;inset:0;
+      background:radial-gradient(ellipse at 30% 50%, rgba(26,86,219,0.18) 0%, transparent 60%),
+                 radial-gradient(ellipse at 70% 30%, rgba(13,122,92,0.12) 0%, transparent 50%);
+    }
+    .hero-inner{position:relative;z-index:1;max-width:680px;margin:0 auto}
+    .hero-logo{
+      font-family:'IBM Plex Serif',serif;
+      font-style:italic;
+      font-size:52px;
+      color:#fff;
+      letter-spacing:-1px;
+      margin-bottom:6px;
+    }
+    .hero-sub{
+      font-size:12px;
+      text-transform:uppercase;
+      letter-spacing:2.5px;
+      color:#4A6FA5;
+      margin-bottom:24px;
+      font-family:'IBM Plex Mono',monospace;
+    }
+    .hero-desc{
+      font-size:16px;
+      color:#8A9BB0;
+      margin-bottom:36px;
+      line-height:1.7;
+      font-weight:300;
+    }
+    .btn-hero{
+      display:inline-flex;align-items:center;gap:8px;
+      background:#1A56DB;color:#fff;
+      padding:13px 32px;border-radius:6px;
+      text-decoration:none;font-size:14px;font-weight:500;
+      transition:background 0.15s,transform 0.1s;
+    }
+    .btn-hero:hover{background:#3B74E8;transform:translateY(-1px)}
+    .btn-hero svg{flex-shrink:0}
+
+    /* ── FEATURES ── */
+    .features{
+      background:#fff;
+      padding:56px 40px;
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:32px;
+      max-width:900px;
+      margin:0 auto;
+      width:100%;
+    }
+    @media(max-width:640px){.features{grid-template-columns:1fr}}
+    .feature-icon{font-size:28px;margin-bottom:14px}
+    .feature-title{font-size:14px;font-weight:600;color:#0F1923;margin-bottom:8px}
+    .feature-list{list-style:none;padding:0}
+    .feature-list li{font-size:12px;color:#8A9BB0;padding:3px 0;border-bottom:1px solid #F0F2F5}
+    .feature-list li:last-child{border-bottom:none}
+
+    /* ── FOOTER ── */
+    .footer{
+      background:#F0F2F5;
+      border-top:1px solid #DDE1E7;
+      padding:24px 40px;
+      margin-top:auto;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      flex-wrap:wrap;
+      gap:12px;
+    }
+    .footer-left{font-size:13px;color:#4A5568}
+    .footer-left strong{color:#0F1923}
+    .footer-right{
+      font-size:11px;color:#8A9BB0;
+      background:#fff;border:1px solid #DDE1E7;border-radius:4px;
+      padding:6px 12px;
+    }
+    .divider{width:100%;height:1px;background:#DDE1E7}
+    .section-wrap{display:flex;justify-content:center;background:#fff}
+  </style>
+</head>
+<body>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-inner">
+    <div class="hero-logo">CareBridge</div>
+    <div class="hero-sub">Beatmungspflege Demo</div>
+    <div class="hero-desc">
+      Digitale Dokumentation für die außerklinische Beatmungspflege —<br>
+      Intensivkurve, Leistungsnachweise, Compliance-Überwachung und strukturierte Übergabe.
+    </div>
+    <a href="/dashboard" class="btn-hero">
+      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+      Zur Anwendung
+    </a>
+
+    <div style="margin-top:36px;padding-top:28px;border-top:1px solid rgba(255,255,255,0.1)">
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:2px;color:#4A6FA5;margin-bottom:10px">Ein Projekt von</div>
+      <div style="font-family:'IBM Plex Serif',serif;font-style:italic;font-size:34px;color:#fff;letter-spacing:-0.5px;margin-bottom:8px">Aaron Quazi</div>
+      <div style="font-size:13px;color:#8A9BB0;margin-bottom:6px">Examinierter Pflegefachmann · Healthcare IT · Digitalisierung</div>
+      <div style="font-size:11px;color:#4A5568">Außerklinische Intensivpflege · Beatmungspflege · Prozessdigitalisierung · Claude Code</div>
+    </div>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<div class="section-wrap">
+  <div class="features">
+    <div>
+      <div class="feature-icon">📋</div>
+      <div class="feature-title">Vollständige Dokumentation</div>
+      <ul class="feature-list">
+        <li>Editierbare Intensivkurve (07–22 Uhr)</li>
+        <li>Leistungsnachweise abzeichnen</li>
+        <li>Beatmungsverordnung</li>
+        <li>Medikamentenplan</li>
+        <li>Schichtbemerkungen</li>
+      </ul>
+    </div>
+    <div>
+      <div class="feature-icon">⚠</div>
+      <div class="feature-title">Automatische Überwachung</div>
+      <ul class="feature-list">
+        <li>Pflichtintervall-Kontrolle</li>
+        <li>Rote Markierung bei Überfälligkeit</li>
+        <li>SpO₂-Alarmgrenzen</li>
+        <li>Compliance-Engine</li>
+        <li>Dokumentationsassistent</li>
+      </ul>
+    </div>
+    <div>
+      <div class="feature-icon">🔄</div>
+      <div class="feature-title">Strukturierte Übergabe</div>
+      <ul class="feature-list">
+        <li>SBAR-Format mit echten Werten</li>
+        <li>Freigabe-Ampel (grün/gelb/rot)</li>
+        <li>Arztübergabe zum Drucken</li>
+        <li>14-Tage-Verlaufsübersicht</li>
+        <li>Notfallplan integriert</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<div class="footer">
+  <div class="footer-left">
+    Ein Projekt von <strong>Aaron Quazi</strong> —
+    Pflegefachmann · Healthcare IT · Digitalisierung
+  </div>
+  <div class="footer-right">
+    ⚠ Demo-Projekt · Keine Echtdaten · Kein Medizinprodukt
+  </div>
+</div>
+
+</body>
+</html>

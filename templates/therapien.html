@@ -1,0 +1,383 @@
+{% extends "base.html" %}
+{% block title %}Therapien{% endblock %}
+{% block page_title %}Therapien{% endblock %}
+{% block page_subtitle %}Verordnungen &amp; Verlaufsdokumentation · {{ patient.name }}{% endblock %}
+
+{% block content %}
+<style>
+  .th-card { background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:20px; }
+  .th-card-header { padding:14px 18px;border-bottom:1px solid var(--border-soft);display:flex;align-items:center;justify-content:space-between; }
+  .th-card-title { font-size:13px;font-weight:600;color:var(--ink);display:flex;align-items:center;gap:8px; }
+  .th-table { width:100%;border-collapse:collapse;font-size:13px; }
+  .th-table th { background:var(--surface-2);padding:8px 14px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:0.7px;color:var(--ink-3);border-bottom:1px solid var(--border); }
+  .th-table td { padding:10px 14px;border-bottom:1px solid var(--border-soft);vertical-align:middle; }
+  .th-table tr:last-child td { border-bottom:none; }
+  .th-table tr:hover td { background:var(--surface-2); }
+
+  .entry-card { border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:10px;background:var(--surface);transition:box-shadow 0.15s; }
+  .entry-card:hover { box-shadow:0 2px 8px rgba(0,0,0,0.08); }
+  .entry-meta { display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap; }
+  .entry-date { font-family:var(--mono);font-size:12px;color:var(--ink-2);font-weight:500; }
+  .entry-typ { font-size:11px;font-weight:600;padding:2px 8px;border-radius:3px; }
+  .typ-physio  { background:#dbeafe;color:#1e40af; }
+  .typ-ergo    { background:#dcfce7;color:#166534; }
+  .typ-logo    { background:#fdf4ff;color:#7e22ce; }
+  .typ-sonst   { background:var(--surface-2);color:var(--ink-3);border:1px solid var(--border); }
+  .entry-therapeut { font-size:12px;color:var(--ink-3); }
+  .entry-kuerzel { font-family:var(--mono);font-size:11px;background:var(--surface-2);border:1px solid var(--border);padding:2px 7px;border-radius:3px; }
+  .entry-text { font-size:13px;color:var(--ink);line-height:1.6; }
+  .entry-actions { margin-left:auto;display:flex;gap:6px;flex-shrink:0; }
+
+  .btn-primary { background:var(--blue);color:#fff;border:none;border-radius:var(--radius);padding:7px 16px;font-size:12px;font-weight:500;cursor:pointer;font-family:var(--sans);transition:background 0.15s; }
+  .btn-primary:hover { background:var(--blue-mid); }
+  .btn-edit-sm { background:transparent;color:var(--blue);border:1px solid var(--blue-mid);border-radius:4px;padding:3px 9px;font-size:11px;cursor:pointer;font-family:var(--sans); }
+  .btn-edit-sm:hover { background:var(--blue-light); }
+  .btn-del-sm { background:transparent;color:var(--red);border:1px solid #FCA5A5;border-radius:4px;padding:3px 8px;font-size:11px;cursor:pointer;font-family:var(--sans); }
+  .btn-del-sm:hover { background:#fff5f5; }
+  .row-btns { display:flex;gap:5px;justify-content:flex-end; }
+
+  /* Bestätigungs-Dialog */
+  .confirm-overlay { display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:2000;align-items:center;justify-content:center; }
+  .confirm-overlay.open { display:flex; }
+  .confirm-box { background:var(--surface);border-radius:8px;box-shadow:0 8px 32px rgba(0,0,0,0.18);width:380px;max-width:95vw;padding:24px; }
+  .confirm-title { font-size:14px;font-weight:600;margin-bottom:6px; }
+  .confirm-text { font-size:13px;color:var(--ink-2);margin-bottom:20px;line-height:1.5; }
+  .confirm-btns { display:flex;gap:8px;justify-content:flex-end; }
+  .btn-confirm-cancel { background:transparent;border:1px solid var(--border);border-radius:var(--radius);padding:7px 14px;font-size:12px;cursor:pointer;font-family:var(--sans); }
+  .btn-confirm-del { background:var(--red);color:#fff;border:none;border-radius:var(--radius);padding:7px 16px;font-size:12px;font-weight:500;cursor:pointer;font-family:var(--sans); }
+  .btn-confirm-del:hover { opacity:0.9; }
+
+  /* Modal */
+  .modal-overlay { display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:1000;align-items:center;justify-content:center; }
+  .modal-overlay.open { display:flex; }
+  .modal { background:var(--surface);border-radius:8px;box-shadow:0 8px 32px rgba(0,0,0,0.18);width:520px;max-width:95vw;max-height:90vh;overflow-y:auto; }
+  .modal-header { padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between; }
+  .modal-title { font-size:14px;font-weight:600; }
+  .modal-close { background:none;border:none;cursor:pointer;color:var(--ink-3);font-size:18px;line-height:1; }
+  .modal-body { padding:20px; }
+  .modal-footer { padding:14px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px; }
+  .form-group { margin-bottom:14px; }
+  .form-label { display:block;font-size:11px;font-weight:600;color:var(--ink-3);text-transform:uppercase;letter-spacing:0.7px;margin-bottom:5px; }
+  .form-control { width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:4px;font-family:var(--sans);font-size:13px;color:var(--ink);background:var(--surface); }
+  .form-control:focus { outline:none;border-color:var(--blue);box-shadow:0 0 0 2px rgba(26,86,219,0.1); }
+  textarea.form-control { resize:vertical;min-height:80px; }
+  .btn-ghost { background:transparent;border:1px solid var(--border);border-radius:var(--radius);padding:7px 14px;font-size:12px;cursor:pointer;font-family:var(--sans);color:var(--ink-2); }
+  .btn-ghost:hover { background:var(--surface-2); }
+</style>
+
+<!-- OBERER BEREICH: Aktive Verordnungen -->
+<div class="th-card">
+  <div class="th-card-header">
+    <div class="th-card-title">
+      <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+      Aktive Therapieverordnungen
+    </div>
+    <button class="btn-primary" onclick="openVerordnungModal(null)">+ Therapie hinzufügen</button>
+  </div>
+  <div class="table-wrap">
+    <table class="th-table">
+      <thead>
+        <tr>
+          <th>Therapie</th>
+          <th>Frequenz</th>
+          <th>Therapeut</th>
+          <th>Seit</th>
+          <th>Ziel</th>
+          <th style="width:90px"></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for v in verordnungen %}
+        <tr id="vrow-{{ v.id }}">
+          <td>
+            <span class="entry-typ {% if v.typ == 'Physiotherapie' %}typ-physio{% elif v.typ == 'Ergotherapie' %}typ-ergo{% elif v.typ == 'Logopädie' %}typ-logo{% else %}typ-sonst{% endif %}">
+              {{ v.typ }}
+            </span>
+          </td>
+          <td>{{ v.frequenz }}</td>
+          <td>{{ v.therapeut }}</td>
+          <td style="font-family:var(--mono);font-size:12px">{{ v.seit }}</td>
+          <td style="color:var(--ink-3);font-size:12px">{{ v.ziel }}</td>
+          <td>
+            <div class="row-btns">
+              <button class="btn-edit-sm" onclick="openVerordnungModal({{ v | tojson }})">✏</button>
+              <button class="btn-del-sm" onclick="confirmDelete('verordnung','{{ v.id }}','{{ v.typ }}')">🗑</button>
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6" style="text-align:center;color:var(--ink-3);padding:20px">Noch keine Therapieverordnungen eingetragen.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- UNTERER BEREICH: Therapieeinträge -->
+<div class="th-card">
+  <div class="th-card-header">
+    <div class="th-card-title">
+      <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+      Therapieverlauf
+      <span style="font-size:11px;font-weight:400;color:var(--ink-3)">({{ eintraege|length }} Einträge)</span>
+    </div>
+    <button class="btn-primary" onclick="openEintragModal(null)">+ Eintrag hinzufügen</button>
+  </div>
+  <div style="padding:16px">
+    {% for e in eintraege %}
+    <div class="entry-card" id="ecard-{{ e.id }}">
+      <div class="entry-meta">
+        <span class="entry-date">{{ e.datum | replace('-', '.') }} · {{ e.uhrzeit }}</span>
+        <span class="entry-typ {% if e.typ == 'Physiotherapie' %}typ-physio{% elif e.typ == 'Ergotherapie' %}typ-ergo{% elif e.typ == 'Logopädie' %}typ-logo{% else %}typ-sonst{% endif %}">
+          {{ e.typ }}
+        </span>
+        <span class="entry-therapeut">{{ e.therapeut }}</span>
+        <span class="entry-kuerzel">{{ e.kuerzel }}</span>
+        <div class="entry-actions">
+          <button class="btn-edit-sm" onclick="openEintragModal({{ e | tojson }})">✏ Bearbeiten</button>
+          <button class="btn-del-sm" onclick="confirmDelete('eintrag','{{ e.id }}','Eintrag {{ e.datum }}')">🗑 Löschen</button>
+        </div>
+      </div>
+      <div class="entry-text">{{ e.bericht }}</div>
+    </div>
+    {% else %}
+    <div style="text-align:center;color:var(--ink-3);padding:32px">Noch keine Therapieeinträge vorhanden.</div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- Modal: Therapieeintrag (Neu + Bearbeiten) -->
+<div class="modal-overlay" id="modal-eintrag">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-eintrag-title">Therapieeintrag hinzufügen</div>
+      <button class="modal-close" onclick="closeModal('modal-eintrag')">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="form-group">
+          <label class="form-label">Datum</label>
+          <input type="date" class="form-control" id="e-datum">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Uhrzeit</label>
+          <input type="time" class="form-control" id="e-uhrzeit">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Therapie-Typ</label>
+        <select class="form-control" id="e-typ">
+          <option>Physiotherapie</option>
+          <option>Ergotherapie</option>
+          <option>Logopädie</option>
+          <option>Sonstiges</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Therapeut</label>
+        <input type="text" class="form-control" id="e-therapeut" placeholder="Name des Therapeuten">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Verlaufsbericht</label>
+        <textarea class="form-control" id="e-bericht" rows="4" placeholder="Beschreibung der Therapiesitzung…"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Kürzel (dokumentierende Person)</label>
+        <input type="text" class="form-control" id="e-kuerzel" placeholder="z.B. AQ" maxlength="4" style="width:80px;text-transform:uppercase">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="closeModal('modal-eintrag')">Abbrechen</button>
+      <button class="btn-primary" onclick="speicherEintrag()">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Verordnung (Neu + Bearbeiten) -->
+<div class="modal-overlay" id="modal-verordnung">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-verordnung-title">Therapieverordnung hinzufügen</div>
+      <button class="modal-close" onclick="closeModal('modal-verordnung')">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Therapie-Typ</label>
+        <select class="form-control" id="v-typ">
+          <option>Physiotherapie</option>
+          <option>Ergotherapie</option>
+          <option>Logopädie</option>
+          <option>Sonstiges</option>
+        </select>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="form-group">
+          <label class="form-label">Frequenz</label>
+          <input type="text" class="form-control" id="v-frequenz" placeholder="z.B. 3x/Woche">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Verordnet seit</label>
+          <input type="date" class="form-control" id="v-seit">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Therapeut</label>
+        <input type="text" class="form-control" id="v-therapeut" placeholder="Name des Therapeuten">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Therapieziel</label>
+        <textarea class="form-control" id="v-ziel" rows="3" placeholder="Ziel der Therapie…"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="closeModal('modal-verordnung')">Abbrechen</button>
+      <button class="btn-primary" onclick="speicherVerordnung()">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<!-- Bestätigungs-Dialog -->
+<div class="confirm-overlay" id="confirm-overlay">
+  <div class="confirm-box">
+    <div class="confirm-title">Löschen bestätigen</div>
+    <div class="confirm-text" id="confirm-text"></div>
+    <div class="confirm-btns">
+      <button class="btn-confirm-cancel" onclick="closeConfirm()">Abbrechen</button>
+      <button class="btn-confirm-del" id="confirm-del-btn">Löschen</button>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const heute = new Date().toISOString().slice(0,10);
+  const jetzt = new Date().toTimeString().slice(0,5);
+
+  function openModal(id) { document.getElementById(id).classList.add('open'); }
+  function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+  document.querySelectorAll('.modal-overlay').forEach(m => {
+    m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
+  });
+
+  // ── Eintrag Modal (Neu + Bearbeiten) ─────────────────────
+  let _editEintragId = null;
+
+  function openEintragModal(data) {
+    if (data) {
+      _editEintragId = data.id;
+      document.getElementById('modal-eintrag-title').textContent = 'Eintrag bearbeiten';
+      document.getElementById('e-datum').value     = data.datum    || heute;
+      document.getElementById('e-uhrzeit').value   = data.uhrzeit  || jetzt;
+      document.getElementById('e-typ').value       = data.typ      || 'Physiotherapie';
+      document.getElementById('e-therapeut').value = data.therapeut || '';
+      document.getElementById('e-bericht').value   = data.bericht  || '';
+      document.getElementById('e-kuerzel').value   = data.kuerzel  || '';
+    } else {
+      _editEintragId = null;
+      document.getElementById('modal-eintrag-title').textContent = 'Therapieeintrag hinzufügen';
+      document.getElementById('e-datum').value     = heute;
+      document.getElementById('e-uhrzeit').value   = jetzt;
+      document.getElementById('e-typ').value       = 'Physiotherapie';
+      document.getElementById('e-therapeut').value = '';
+      document.getElementById('e-bericht').value   = '';
+      document.getElementById('e-kuerzel').value   = '';
+    }
+    openModal('modal-eintrag');
+  }
+
+  async function speicherEintrag() {
+    const body = {
+      datum:     document.getElementById('e-datum').value,
+      uhrzeit:   document.getElementById('e-uhrzeit').value,
+      typ:       document.getElementById('e-typ').value,
+      therapeut: document.getElementById('e-therapeut').value,
+      bericht:   document.getElementById('e-bericht').value,
+      kuerzel:   document.getElementById('e-kuerzel').value.toUpperCase()
+    };
+    if (!body.bericht.trim()) { alert('Verlaufsbericht ist Pflichtfeld.'); return; }
+    const url = _editEintragId
+      ? `/api/therapie/eintrag/${_editEintragId}`
+      : '/api/therapie/eintrag';
+    const method = _editEintragId ? 'PUT' : 'POST';
+    const r = await fetch(url, { method, headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+    if (r.ok) { location.reload(); }
+    else { alert('Fehler beim Speichern.'); }
+  }
+
+  // ── Verordnung Modal (Neu + Bearbeiten) ──────────────────
+  let _editVerordnungId = null;
+
+  function openVerordnungModal(data) {
+    if (data) {
+      _editVerordnungId = data.id;
+      document.getElementById('modal-verordnung-title').textContent = 'Verordnung bearbeiten';
+      document.getElementById('v-typ').value       = data.typ       || 'Physiotherapie';
+      document.getElementById('v-frequenz').value  = data.frequenz  || '';
+      document.getElementById('v-therapeut').value = data.therapeut || '';
+      document.getElementById('v-seit').value      = data.seit      || heute;
+      document.getElementById('v-ziel').value      = data.ziel      || '';
+    } else {
+      _editVerordnungId = null;
+      document.getElementById('modal-verordnung-title').textContent = 'Therapieverordnung hinzufügen';
+      document.getElementById('v-typ').value       = 'Physiotherapie';
+      document.getElementById('v-frequenz').value  = '';
+      document.getElementById('v-therapeut').value = '';
+      document.getElementById('v-seit').value      = heute;
+      document.getElementById('v-ziel').value      = '';
+    }
+    openModal('modal-verordnung');
+  }
+
+  async function speicherVerordnung() {
+    const body = {
+      typ:       document.getElementById('v-typ').value,
+      frequenz:  document.getElementById('v-frequenz').value,
+      therapeut: document.getElementById('v-therapeut').value,
+      seit:      document.getElementById('v-seit').value,
+      ziel:      document.getElementById('v-ziel').value
+    };
+    if (!body.therapeut.trim()) { alert('Therapeut ist Pflichtfeld.'); return; }
+    const url = _editVerordnungId
+      ? `/api/therapie/verordnung/${_editVerordnungId}`
+      : '/api/therapie/verordnung';
+    const method = _editVerordnungId ? 'PUT' : 'POST';
+    const r = await fetch(url, { method, headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+    if (r.ok) { location.reload(); }
+    else { alert('Fehler beim Speichern.'); }
+  }
+
+  // ── Löschen ───────────────────────────────────────────────
+  let _confirmCallback = null;
+
+  function confirmDelete(typ, id, label) {
+    document.getElementById('confirm-text').innerHTML =
+      `<strong>${label}</strong> wird unwiderruflich gelöscht.<br>
+       <small style="color:var(--ink-3)">Diese Aktion kann nicht rückgängig gemacht werden.</small>`;
+    _confirmCallback = async () => {
+      const url = typ === 'eintrag'
+        ? `/api/therapie/eintrag/${id}`
+        : `/api/therapie/verordnung/${id}`;
+      const r = await fetch(url, { method: 'DELETE' });
+      if (r.ok) {
+        const el = document.getElementById(typ === 'eintrag' ? 'ecard-' + id : 'vrow-' + id);
+        if (el) el.remove();
+      } else {
+        alert('Löschen fehlgeschlagen.');
+      }
+      closeConfirm();
+    };
+    document.getElementById('confirm-del-btn').onclick = _confirmCallback;
+    document.getElementById('confirm-overlay').classList.add('open');
+  }
+
+  function closeConfirm() {
+    document.getElementById('confirm-overlay').classList.remove('open');
+    _confirmCallback = null;
+  }
+  document.getElementById('confirm-overlay').addEventListener('click', e => {
+    if (e.target === document.getElementById('confirm-overlay')) closeConfirm();
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,90 @@
+{
+  "arztbriefe": [
+    {
+      "id": "ab1",
+      "datum": "2026-05-15",
+      "titel": "Entlassungsbrief",
+      "quelle": "Lungenklinik Musterstadt",
+      "zusammenfassung": "Stationärer Aufenthalt 10.–15.05.2026. Pneumonie behandelt, Beatmung optimiert.",
+      "volltext": "Sehr geehrte Frau Dr. Hoffmann,\n\nwir berichten über den stationären Aufenthalt von Herrn Max Mustermann (geb. 14.03.1958) vom 10.05.2026 bis 15.05.2026.\n\nAufnahmegrund: Exazerbation mit Pneumonie bei bekannter ALS und Beatmungspflichtigkeit.\n\nTherapie: Antibiose mit Amoxicillin/Clavulansäure i.v. für 5 Tage, Optimierung der Beatmungseinstellungen (IPAP erhöht auf 22 mbar). Sekretmanagement intensiviert.\n\nEntlassung in gutem Allgemeinzustand. SpO₂ stabil 95–97% unter bestehender Beatmung.\n\nMit freundlichen kollegialen Grüßen,\nProf. Dr. M. Wagner, Lungenklinik Musterstadt"
+    },
+    {
+      "id": "ab2",
+      "datum": "2026-03-02",
+      "titel": "Ambulanzbrief",
+      "quelle": "Neurologische Ambulanz (ALS-Zentrum)",
+      "zusammenfassung": "Quartalsuntersuchung. ALS-Progression moderat. Empfehlung: Ernährungsberatung.",
+      "volltext": "Sehr geehrte Frau Dr. Hoffmann,\n\nwir berichten über die Vorstellung von Herrn Mustermann in unserer ALS-Ambulanz am 02.03.2026.\n\nNeurologischer Befund: Progredienter Verlauf. Deutliche Tetraparese, Dysarthrie zunehmend. Schluckfunktion eingeschränkt. Kommunikation via Augensteuerung.\n\nEmpfehlungen: Ernährungsberatung (PEG-Anlage erwägen), Intensivierung der Logopädie, Fortführung Riluzol 2×50 mg täglich.\n\nNächste Kontrolle in 3 Monaten.\n\nMit freundlichen Grüßen,\nDr. K. Bauer, ALS-Zentrum Musterstadt"
+    },
+    {
+      "id": "ab3",
+      "datum": "2026-01-10",
+      "titel": "Beatmungskontrolle",
+      "quelle": "Dr. Hoffmann",
+      "zusammenfassung": "Beatmungsparameter überprüft. Gerät läuft regelgerecht. TK-Wechsel planmäßig.",
+      "volltext": "Hausarztbericht — Beatmungskontrolle 10.01.2026\n\nPatient: Max Mustermann, P-2024-0042\n\nBeatmungsgerät Astral 150 technisch einwandfrei. Parameter wie verordnet. Auslesesoftware zeigt mittlere Nutzungsdauer 9,8 h/Nacht. Leckage im Normbereich.\n\nTrachealkanüle (Shiley 8.0) gewechselt. Nächster Wechsel: 10.02.2026.\n\nAllgemeinzustand stabil. Patient zufrieden mit Beatmungstoleranz.\n\nDr. Elisabeth Hoffmann"
+    }
+  ],
+  "befunde": [
+    {
+      "id": "bf1",
+      "datum": "2026-06-10",
+      "titel": "Röntgen Thorax",
+      "quelle": "Radiologie Musterstadt",
+      "zusammenfassung": "Keine neuen Infiltrate. Zwerchfelltiefstand beidseits bekannt.",
+      "volltext": "Röntgen Thorax a.p. vom 10.06.2026\n\nPatient: Max Mustermann, 68 J.\n\nBefund: Kein Nachweis frischer Infiltrate. Herz queroval, Herzgröße normal. Zwerchfelltiefstand beidseits bei bekanntem Emphysem. Hili unauffällig. TK in korrekter Position.\n\nBeurteilung: Kein Hinweis auf Pneumonie oder Pleuraerguss."
+    },
+    {
+      "id": "bf2",
+      "datum": "2026-04-15",
+      "titel": "Blutbild + CRP",
+      "quelle": "Labor Musterstadt",
+      "zusammenfassung": "Leukozyten leicht erhöht (10,2 G/l). CRP 18 mg/l — Verlaufskontrolle empfohlen.",
+      "volltext": "Laborbefund vom 15.04.2026\n\nHämatologie:\n- Leukozyten: 10,2 G/l (↑, Norm: 4,0–9,5)\n- Erythrozyten: 4,8 T/l\n- Hämoglobin: 14,2 g/dl\n- Thrombozyten: 238 G/l\n\nEntzündung:\n- CRP: 18 mg/l (↑, Norm: < 5)\n\nBeurteilung: Leichte Entzündungszeichen. Klinischer Kontext beachten. Verlaufskontrolle in 2 Wochen empfohlen."
+    },
+    {
+      "id": "bf3",
+      "datum": "2026-03-01",
+      "titel": "Lungenfunktion",
+      "quelle": "Lungenfunktionslabor",
+      "zusammenfassung": "FVC 22%, FEV1 18% — schwer reduziert bei bekannter ALS.",
+      "volltext": "Lungenfunktionsuntersuchung vom 01.03.2026\n\nFVC: 0,85 l (22 % Soll)\nFEV1: 0,70 l (18 % Soll)\nTiffeneau: 82 %\n\nBeurteilung: Schwere restriktive Ventilationsstörung bei bekannter ALS. Werte progredient verschlechtert im Vergleich zur Voruntersuchung. Beatmungstherapie indiziert und weiterhin erforderlich."
+    }
+  ],
+  "ueberweisungen": [
+    {
+      "id": "uw1",
+      "datum": "2026-06-20",
+      "titel": "Überweisung Neurologie",
+      "quelle": "Dr. Hoffmann",
+      "zusammenfassung": "Überweisung zur ALS-Quartalsuntersuchung und Kommunikationshilfsmittelberatung.",
+      "volltext": "Überweisung vom 20.06.2026\n\nAn: Neurologische Ambulanz, ALS-Zentrum\n\nDiagnose: G12.2 — Amyotrophe Lateralsklerose\n\nBitte um Quartalsuntersuchung. Schwerpunkt: Evaluation Kommunikationshilfsmittel (Augensteuerung), Prüfung PEG-Indikation.\n\nDr. Elisabeth Hoffmann"
+    },
+    {
+      "id": "uw2",
+      "datum": "2026-06-05",
+      "titel": "Überweisung Pneumologie",
+      "quelle": "Dr. Hoffmann",
+      "zusammenfassung": "Beatmungskontrolle und Geräteauslese durch Pneumologen.",
+      "volltext": "Überweisung vom 05.06.2026\n\nAn: Pneumologische Praxis Dr. Schmidt\n\nBitte um Auslese des Beatmungsgerätes (Astral 150) und Überprüfung der aktuellen Beatmungsparameter. Letzte Kontrolle vor 3 Monaten.\n\nDr. Elisabeth Hoffmann"
+    }
+  ],
+  "sonstiges": [
+    {
+      "id": "s1",
+      "datum": "2026-01-01",
+      "titel": "Pflegeplanung 2026",
+      "quelle": "Pflegeteam",
+      "zusammenfassung": "Aktuelle Pflegeplanung und Ziele für 2026.",
+      "volltext": "Pflegeplanung — Max Mustermann — Stand: 01.01.2026\n\nPflegeziele:\n1. Beatmungssicherheit gewährleisten\n2. Infektionsprophylaxe (Pneumonieprophylaxe)\n3. Dekubitusprophylaxe (2-stündliche Lagerung)\n4. Kommunikation erhalten (Augensteuerung)\n5. Wohlbefinden und Würde\n\nVerantwortlich: Sandra Krause, Pflegeleitung"
+    },
+    {
+      "id": "s2",
+      "datum": "2025-03-15",
+      "titel": "Betreuungsverfügung",
+      "quelle": "Max Mustermann / Notar",
+      "zusammenfassung": "Patientenverfügung und Vorsorgevollmacht. Ehefrau Maria Mustermann bevollmächtigt.",
+      "volltext": "DEMO — Betreuungsverfügung\n\nIn dieser Datei sind Informationen zur Patientenverfügung von Max Mustermann hinterlegt.\n\nBevollmächtigte Person: Maria Mustermann (Ehefrau)\nKontakt: 0151 12345678\n\nZu weiteren Informationen bitte Originaldokument aus der Patientenakte entnehmen.\n\nBeglaubigt: Notar Dr. B. Fischer, Musterstadt"
+    }
+  ]
+}

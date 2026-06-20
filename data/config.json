@@ -1,0 +1,157 @@
+{
+  "leistungsvorlagen": [
+    {
+      "id": "GKP",
+      "intervall_h": null,
+      "name": "Ganzkörperpflege",
+      "pflicht": true,
+      "zeiten": [
+        "06:30"
+      ]
+    },
+    {
+      "id": "MP",
+      "intervall_h": null,
+      "name": "Mundpflege / Teilpflege",
+      "pflicht": true,
+      "zeiten": [
+        "06:30",
+        "12:00",
+        "20:00"
+      ]
+    },
+    {
+      "id": "TK",
+      "intervall_h": null,
+      "name": "Trachealkanülenpflege",
+      "pflicht": true,
+      "zeiten": [
+        "07:15"
+      ]
+    },
+    {
+      "id": "ABS",
+      "intervall_h": 4,
+      "name": "Absaugung tracheal",
+      "pflicht": false,
+      "zeiten": [
+        "07:30"
+      ]
+    },
+    {
+      "id": "INH",
+      "intervall_h": null,
+      "name": "Inhalation NaCl + Ambroxol",
+      "pflicht": true,
+      "zeiten": [
+        "08:00",
+        "14:00",
+        "20:00"
+      ]
+    },
+    {
+      "id": "VIT",
+      "intervall_h": 2,
+      "name": "Vitalzeichenkontrolle",
+      "pflicht": true,
+      "zeiten": [
+        "08:15",
+        "14:00",
+        "20:00"
+      ]
+    },
+    {
+      "id": "LAG",
+      "intervall_h": 2,
+      "name": "Lagerungswechsel",
+      "pflicht": true,
+      "zeiten": []
+    },
+    {
+      "id": "MED",
+      "intervall_h": null,
+      "name": "Medikamentengabe",
+      "pflicht": true,
+      "zeiten": [
+        "07:00",
+        "13:00",
+        "19:00",
+        "22:00"
+      ]
+    }
+  ],
+  "patienten": [
+    {
+      "aktiv": true,
+      "alter": 68,
+      "arzt": "Dr. Elisabeth Hoffmann",
+      "beatmungsgeraet": "Astral 150 (ResMed)",
+      "beatmungspflichtig": true,
+      "beatmungspflichtig_seit": "2022-11-01",
+      "diagnose": "Chronisch respiratorische Insuffizienz bei ALS",
+      "geburtsdatum": "1958-03-14",
+      "id": "P-2024-0042",
+      "intervalle": {
+        "af": 2,
+        "bd_dia": 4,
+        "bd_sys": 4,
+        "beatmung": 2,
+        "hf": 2,
+        "lagerung": 2,
+        "leckage": 2,
+        "spo2": 2,
+        "vt": 2
+      },
+      "name": "Max Mustermann",
+      "station": "Beatmungs-WG Musterstadt",
+      "zimmer": "Zimmer 3"
+    },
+    {
+      "aktiv": true,
+      "alter": 80,
+      "arzt": "Dr. Elisabeth Hoffmann",
+      "beatmungsgeraet": "Lumis 150 VPAP ST-A (ResMed)",
+      "beatmungspflichtig": true,
+      "beatmungspflichtig_seit": "2024-03-15",
+      "diagnose": "COPD Gold IV mit hyperkapnischer Insuffizienz",
+      "geburtsdatum": "1945-07-22",
+      "id": "P-2024-0043",
+      "intervalle": {
+        "af": 2,
+        "bd_dia": 4,
+        "bd_sys": 4,
+        "beatmung": 2,
+        "hf": 3,
+        "lagerung": 2,
+        "leckage": 2,
+        "spo2": 2,
+        "vt": 2
+      },
+      "name": "Maria Musterfrau",
+      "station": "Beatmungs-WG Musterstadt",
+      "zimmer": "Zimmer 5"
+    }
+  ],
+  "personal": [
+    {
+      "kuerzel": "AB",
+      "name": "A. Berger",
+      "rolle": "Pflegefachmann"
+    },
+    {
+      "kuerzel": "SK",
+      "name": "Sandra Krause",
+      "rolle": "Pflegeleitung"
+    },
+    {
+      "kuerzel": "AQ",
+      "name": "Aaron Quazi",
+      "rolle": "Pflegefachmann"
+    },
+    {
+      "kuerzel": "TM",
+      "name": "Thomas Meier",
+      "rolle": "Pflegehilfskraft"
+    }
+  ]
+}

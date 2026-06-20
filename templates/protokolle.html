@@ -1,0 +1,398 @@
+{% extends "base.html" %}
+{% block title %}Protokolle & Dokumente{% endblock %}
+{% block page_title %}Protokolle &amp; Dokumente{% endblock %}
+{% block page_subtitle %}Arztbriefe · Befunde · Überweisungen · Sonstiges · {{ patient.name }}{% endblock %}
+
+{% block content %}
+<style>
+  .proto-tabs { display:flex;gap:2px;margin-bottom:16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:4px;width:fit-content;box-shadow:var(--shadow); }
+  .proto-tab { padding:6px 18px;font-size:12px;font-weight:500;border:none;border-radius:4px;cursor:pointer;background:transparent;color:var(--ink-3);font-family:var(--sans);transition:all 0.15s;display:flex;align-items:center;gap:6px; }
+  .proto-tab:hover { color:var(--ink);background:var(--surface-2); }
+  .proto-tab.active { background:var(--blue);color:#fff; }
+  .proto-panel { display:none; }
+  .proto-panel.active { display:block; }
+  .count-badge { font-size:10px;font-weight:700;padding:1px 6px;border-radius:8px;background:rgba(255,255,255,0.25);line-height:16px; }
+  .proto-tab:not(.active) .count-badge { background:var(--surface-2);color:var(--ink-3); }
+
+  .doc-card { border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:10px;background:var(--surface);transition:box-shadow 0.15s; }
+  .doc-card:hover { box-shadow:0 2px 8px rgba(0,0,0,0.08); }
+  .doc-header { display:flex;align-items:flex-start;gap:12px;margin-bottom:8px; }
+  .doc-icon { font-size:20px;flex-shrink:0;margin-top:1px; }
+  .doc-main { flex:1;min-width:0; }
+  .doc-titel { font-size:13px;font-weight:600;color:var(--ink);margin-bottom:3px; }
+  .doc-meta { font-size:11px;color:var(--ink-3); }
+  .doc-zusammen { font-size:12px;color:var(--ink-2);margin-top:8px;line-height:1.5;padding-top:8px;border-top:1px solid var(--border-soft); }
+  .doc-actions { display:flex;gap:8px;margin-top:10px;flex-wrap:wrap; }
+  .btn-sm { padding:4px 12px;font-size:11px;font-weight:500;border-radius:4px;cursor:pointer;border:1px solid var(--border);background:var(--surface-2);color:var(--ink-2);font-family:var(--sans);transition:all 0.15s; }
+  .btn-sm:hover { background:var(--blue-light);border-color:var(--blue-mid);color:var(--blue); }
+  .btn-del-sm { padding:4px 10px;font-size:11px;border-radius:4px;cursor:pointer;border:1px solid #FCA5A5;background:transparent;color:var(--red);font-family:var(--sans);transition:all 0.15s; }
+  .btn-del-sm:hover { background:#fff5f5; }
+
+  /* Bestätigungs-Dialog */
+  .confirm-overlay { display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:2000;align-items:center;justify-content:center; }
+  .confirm-overlay.open { display:flex; }
+  .confirm-box { background:var(--surface);border-radius:8px;box-shadow:0 8px 32px rgba(0,0,0,0.18);width:380px;max-width:95vw;padding:24px; }
+  .confirm-title { font-size:14px;font-weight:600;margin-bottom:6px; }
+  .confirm-text { font-size:13px;color:var(--ink-2);margin-bottom:20px;line-height:1.5; }
+  .confirm-btns { display:flex;gap:8px;justify-content:flex-end; }
+  .btn-confirm-cancel { background:transparent;border:1px solid var(--border);border-radius:var(--radius);padding:7px 14px;font-size:12px;cursor:pointer;font-family:var(--sans); }
+  .btn-confirm-del { background:var(--red);color:#fff;border:none;border-radius:var(--radius);padding:7px 16px;font-size:12px;font-weight:500;cursor:pointer;font-family:var(--sans); }
+
+  .btn-primary { background:var(--blue);color:#fff;border:none;border-radius:var(--radius);padding:7px 16px;font-size:12px;font-weight:500;cursor:pointer;font-family:var(--sans);transition:background 0.15s; }
+  .btn-primary:hover { background:var(--blue-mid); }
+
+  .panel-header { display:flex;align-items:center;justify-content:space-between;margin-bottom:14px; }
+  .panel-title { font-size:13px;font-weight:600;color:var(--ink); }
+
+  /* Modal */
+  .modal-overlay { display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:1000;align-items:center;justify-content:center; }
+  .modal-overlay.open { display:flex; }
+  .modal { background:var(--surface);border-radius:8px;box-shadow:0 8px 32px rgba(0,0,0,0.18);width:580px;max-width:95vw;max-height:90vh;overflow-y:auto; }
+  .modal-header { padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between; }
+  .modal-title { font-size:14px;font-weight:600; }
+  .modal-close { background:none;border:none;cursor:pointer;color:var(--ink-3);font-size:20px;line-height:1; }
+  .modal-body { padding:20px; }
+  .modal-footer { padding:14px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px; }
+  .form-group { margin-bottom:14px; }
+  .form-label { display:block;font-size:11px;font-weight:600;color:var(--ink-3);text-transform:uppercase;letter-spacing:0.7px;margin-bottom:5px; }
+  .form-control { width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:4px;font-family:var(--sans);font-size:13px;color:var(--ink);background:var(--surface); }
+  .form-control:focus { outline:none;border-color:var(--blue);box-shadow:0 0 0 2px rgba(26,86,219,0.1); }
+  textarea.form-control { resize:vertical;min-height:100px; }
+  .btn-ghost { background:transparent;border:1px solid var(--border);border-radius:var(--radius);padding:7px 14px;font-size:12px;cursor:pointer;font-family:var(--sans);color:var(--ink-2); }
+  .btn-ghost:hover { background:var(--surface-2); }
+
+  /* Vorschau-Modal */
+  .vorschau-modal { background:var(--surface);border-radius:8px;box-shadow:0 8px 32px rgba(0,0,0,0.18);width:660px;max-width:95vw;max-height:85vh;overflow-y:auto; }
+  .vorschau-body { padding:24px;font-size:13px;line-height:1.7;color:var(--ink);white-space:pre-wrap;font-family:'IBM Plex Mono', monospace; }
+</style>
+
+<!-- Tabs -->
+<div class="proto-tabs">
+  <button class="proto-tab active" onclick="switchTab('arztbriefe', this)">
+    📄 Arztbriefe <span class="count-badge">{{ arztbriefe|length }}</span>
+  </button>
+  <button class="proto-tab" onclick="switchTab('befunde', this)">
+    🔬 Befunde &amp; Bilder <span class="count-badge">{{ befunde|length }}</span>
+  </button>
+  <button class="proto-tab" onclick="switchTab('ueberweisungen', this)">
+    📋 Überweisungen <span class="count-badge">{{ ueberweisungen|length }}</span>
+  </button>
+  <button class="proto-tab" onclick="switchTab('sonstiges', this)">
+    📁 Sonstiges <span class="count-badge">{{ sonstiges|length }}</span>
+  </button>
+</div>
+
+<!-- TAB: Arztbriefe -->
+<div id="tab-arztbriefe" class="proto-panel active">
+  <div class="panel-header">
+    <div class="panel-title">Arztbriefe</div>
+    <button class="btn-primary" onclick="openHinzufuegen('arztbriefe')">+ Dokument hinzufügen</button>
+  </div>
+  {% for d in arztbriefe %}
+  <div class="doc-card" id="doc-{{ d.id }}">
+    <div class="doc-header">
+      <div class="doc-icon">📄</div>
+      <div class="doc-main">
+        <div class="doc-titel">{{ d.titel }}</div>
+        <div class="doc-meta">{{ d.datum | replace('-', '.') }} · {{ d.quelle }}</div>
+      </div>
+    </div>
+    <div class="doc-zusammen">{{ d.zusammenfassung }}</div>
+    <div class="doc-actions">
+      <button class="btn-sm" onclick="openVorschau('{{ d.id }}')">👁 Vorschau</button>
+      <button class="btn-sm" onclick="druckeDoc('{{ d.id }}')">🖨 Drucken</button>
+      <button class="btn-del-sm" onclick="confirmDelete('arztbriefe','{{ d.id }}','{{ d.titel | replace("'", "\\'") }}')">🗑 Löschen</button>
+    </div>
+  </div>
+  {% else %}
+  <div style="text-align:center;color:var(--ink-3);padding:32px">Keine Arztbriefe vorhanden.</div>
+  {% endfor %}
+</div>
+
+<!-- TAB: Befunde -->
+<div id="tab-befunde" class="proto-panel">
+  <div class="panel-header">
+    <div class="panel-title">Befunde &amp; Bilder</div>
+    <button class="btn-primary" onclick="openHinzufuegen('befunde')">+ Dokument hinzufügen</button>
+  </div>
+  {% for d in befunde %}
+  <div class="doc-card" id="doc-{{ d.id }}">
+    <div class="doc-header">
+      <div class="doc-icon">🔬</div>
+      <div class="doc-main">
+        <div class="doc-titel">{{ d.titel }}</div>
+        <div class="doc-meta">{{ d.datum | replace('-', '.') }} · {{ d.quelle }}</div>
+      </div>
+    </div>
+    <div class="doc-zusammen">{{ d.zusammenfassung }}</div>
+    <div class="doc-actions">
+      <button class="btn-sm" onclick="openVorschau('{{ d.id }}')">👁 Vorschau</button>
+      <button class="btn-sm" onclick="druckeDoc('{{ d.id }}')">🖨 Drucken</button>
+      <button class="btn-del-sm" onclick="confirmDelete('befunde','{{ d.id }}','{{ d.titel | replace("'", "\\'") }}')">🗑 Löschen</button>
+    </div>
+  </div>
+  {% else %}
+  <div style="text-align:center;color:var(--ink-3);padding:32px">Keine Befunde vorhanden.</div>
+  {% endfor %}
+</div>
+
+<!-- TAB: Überweisungen -->
+<div id="tab-ueberweisungen" class="proto-panel">
+  <div class="panel-header">
+    <div class="panel-title">Überweisungen</div>
+    <button class="btn-primary" onclick="openHinzufuegen('ueberweisungen')">+ Dokument hinzufügen</button>
+  </div>
+  {% for d in ueberweisungen %}
+  <div class="doc-card" id="doc-{{ d.id }}">
+    <div class="doc-header">
+      <div class="doc-icon">📋</div>
+      <div class="doc-main">
+        <div class="doc-titel">{{ d.titel }}</div>
+        <div class="doc-meta">{{ d.datum | replace('-', '.') }} · {{ d.quelle }}</div>
+      </div>
+    </div>
+    <div class="doc-zusammen">{{ d.zusammenfassung }}</div>
+    <div class="doc-actions">
+      <button class="btn-sm" onclick="openVorschau('{{ d.id }}')">👁 Vorschau</button>
+      <button class="btn-sm" onclick="druckeDoc('{{ d.id }}')">🖨 Drucken</button>
+      <button class="btn-del-sm" onclick="confirmDelete('ueberweisungen','{{ d.id }}','{{ d.titel | replace("'", "\\'") }}')">🗑 Löschen</button>
+    </div>
+  </div>
+  {% else %}
+  <div style="text-align:center;color:var(--ink-3);padding:32px">Keine Überweisungen vorhanden.</div>
+  {% endfor %}
+</div>
+
+<!-- TAB: Sonstiges -->
+<div id="tab-sonstiges" class="proto-panel">
+  <div class="panel-header">
+    <div class="panel-title">Sonstiges</div>
+    <button class="btn-primary" onclick="openHinzufuegen('sonstiges')">+ Dokument hinzufügen</button>
+  </div>
+  {% for d in sonstiges %}
+  <div class="doc-card" id="doc-{{ d.id }}">
+    <div class="doc-header">
+      <div class="doc-icon">📁</div>
+      <div class="doc-main">
+        <div class="doc-titel">{{ d.titel }}</div>
+        <div class="doc-meta">{{ d.datum | replace('-', '.') }} · {{ d.quelle }}</div>
+      </div>
+    </div>
+    <div class="doc-zusammen">{{ d.zusammenfassung }}</div>
+    <div class="doc-actions">
+      <button class="btn-sm" onclick="openVorschau('{{ d.id }}')">👁 Vorschau</button>
+      <button class="btn-sm" onclick="druckeDoc('{{ d.id }}')">🖨 Drucken</button>
+      <button class="btn-del-sm" onclick="confirmDelete('sonstiges','{{ d.id }}','{{ d.titel | replace("'", "\\'") }}')">🗑 Löschen</button>
+    </div>
+  </div>
+  {% else %}
+  <div style="text-align:center;color:var(--ink-3);padding:32px">Keine Dokumente vorhanden.</div>
+  {% endfor %}
+</div>
+
+<!-- Modal: Vorschau -->
+<div class="modal-overlay" id="modal-vorschau">
+  <div class="vorschau-modal">
+    <div class="modal-header">
+      <div class="modal-title" id="vorschau-titel">Dokument</div>
+      <button class="modal-close" onclick="closeModal('modal-vorschau')">&times;</button>
+    </div>
+    <div style="padding:10px 20px 4px;font-size:11px;color:var(--ink-3)" id="vorschau-meta"></div>
+    <div class="vorschau-body" id="vorschau-text"></div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="closeModal('modal-vorschau')">Schließen</button>
+      <button class="btn-primary" onclick="druckeCurrentDoc()">🖨 Drucken</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Hinzufügen -->
+<div class="modal-overlay" id="modal-hinzufuegen">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Dokument hinzufügen</div>
+      <button class="modal-close" onclick="closeModal('modal-hinzufuegen')">&times;</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="h-kategorie" value="sonstiges">
+      <div class="form-group">
+        <label class="form-label">Kategorie</label>
+        <select class="form-control" id="h-kategorie-sel" onchange="document.getElementById('h-kategorie').value=this.value">
+          <option value="arztbriefe">Arztbriefe</option>
+          <option value="befunde">Befunde &amp; Bilder</option>
+          <option value="ueberweisungen">Überweisungen</option>
+          <option value="sonstiges">Sonstiges</option>
+        </select>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="form-group">
+          <label class="form-label">Datum</label>
+          <input type="date" class="form-control" id="h-datum">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Quelle / Aussteller</label>
+          <input type="text" class="form-control" id="h-quelle" placeholder="z.B. Dr. Hoffmann">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Titel / Bezeichnung</label>
+        <input type="text" class="form-control" id="h-titel" placeholder="z.B. Entlassungsbrief">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Kurznotiz / Zusammenfassung</label>
+        <textarea class="form-control" id="h-zusammenfassung" rows="2" placeholder="Kurze Zusammenfassung des Inhalts…"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Volltext / Details (optional)</label>
+        <textarea class="form-control" id="h-volltext" rows="5" placeholder="Ausführlicher Text oder Inhaltsbeschreibung…"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="closeModal('modal-hinzufuegen')">Abbrechen</button>
+      <button class="btn-primary" onclick="speicherDokument()">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<!-- Bestätigungs-Dialog -->
+<div class="confirm-overlay" id="confirm-overlay">
+  <div class="confirm-box">
+    <div class="confirm-title" id="confirm-title">Dokument löschen?</div>
+    <div class="confirm-text" id="confirm-text">Möchtest du dieses Dokument wirklich löschen?</div>
+    <div class="confirm-btns">
+      <button class="btn-confirm-cancel" onclick="closeConfirm()">Abbrechen</button>
+      <button class="btn-confirm-del" id="confirm-del-btn">Löschen</button>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Alle Dokument-Daten als Lookup-Dict
+  const PROTOKOLLE_DATA = {{ protokolle_json | safe }};
+
+  document.getElementById('h-datum').value = new Date().toISOString().slice(0,10);
+
+  function switchTab(name, btn) {
+    document.querySelectorAll('.proto-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.proto-tab').forEach(b => b.classList.remove('active'));
+    document.getElementById('tab-' + name).classList.add('active');
+    btn.classList.add('active');
+  }
+
+  function openModal(id) { document.getElementById(id).classList.add('open'); }
+  function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+  document.querySelectorAll('.modal-overlay').forEach(m => {
+    m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
+  });
+
+  // ── Vorschau ──────────────────────────────────────────────
+  let _currentVorschauId = null;
+
+  function openVorschau(docId) {
+    _currentVorschauId = docId;
+    const doc = PROTOKOLLE_DATA[docId] || {};
+    document.getElementById('vorschau-titel').textContent = doc.titel || 'Dokument';
+    document.getElementById('vorschau-meta').textContent =
+      (doc.datum || '').replace(/-/g, '.') + ' · ' + (doc.quelle || '');
+    document.getElementById('vorschau-text').textContent =
+      doc.volltext || doc.zusammenfassung || '(Kein Volltext vorhanden)';
+    openModal('modal-vorschau');
+  }
+
+  function druckeCurrentDoc() {
+    if (_currentVorschauId) druckeDoc(_currentVorschauId);
+  }
+
+  // ── Drucken — öffnet neues Fenster ───────────────────────
+  function htmlEsc(s) {
+    return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  function druckeDoc(docId) {
+    const doc = PROTOKOLLE_DATA[docId] || {};
+    const w = window.open('', '_blank');
+    if (!w) { alert('Popup-Fenster wurde blockiert. Bitte Popup-Blocker deaktivieren.'); return; }
+    w.document.write(`<!DOCTYPE html><html lang="de"><head>
+      <meta charset="utf-8">
+      <title>${htmlEsc(doc.titel || 'Dokument')}</title>
+      <style>
+        body { font-family: Arial, Helvetica, sans-serif; padding: 40px; max-width: 720px; margin: 0 auto; color: #111; }
+        .cb-header { border-bottom: 2px solid #1A56DB; padding-bottom: 14px; margin-bottom: 28px; display:flex; align-items:center; justify-content:space-between; }
+        .cb-brand { font-size: 20px; font-weight: 700; color: #1A56DB; letter-spacing: -0.5px; }
+        .cb-header-meta { font-size: 12px; color: #555; text-align:right; }
+        h2 { font-size: 17px; margin: 0 0 20px; font-weight: 600; }
+        pre { white-space: pre-wrap; font-family: Arial, Helvetica, sans-serif; font-size: 13px; line-height: 1.75; }
+        .cb-footer { border-top: 1px solid #ddd; margin-top: 48px; padding-top: 10px; font-size: 11px; color: #999; text-align: center; }
+        @page { margin: 20mm; }
+      </style></head><body>
+      <div class="cb-header">
+        <div class="cb-brand">CareBridge</div>
+        <div class="cb-header-meta">${htmlEsc(doc.quelle || '')}<br>${htmlEsc((doc.datum || '').replace(/-/g, '.'))}</div>
+      </div>
+      <h2>${htmlEsc(doc.titel || 'Dokument')}</h2>
+      <pre>${htmlEsc(doc.volltext || doc.zusammenfassung || '')}</pre>
+      <div class="cb-footer">Erstellt von Aaron Quazi &middot; CareBridge Demo &middot; Kein Echtdokument</div>
+    </body></html>`);
+    w.document.close();
+    w.focus();
+    setTimeout(() => { w.print(); }, 200);
+  }
+
+  // ── Löschen ───────────────────────────────────────────────
+  let _confirmAction = null;
+
+  function confirmDelete(kategorie, id, label) {
+    document.getElementById('confirm-title').textContent = 'Dokument löschen?';
+    document.getElementById('confirm-text').textContent = '"' + label + '" wird unwiderruflich gelöscht.';
+    _confirmAction = async () => {
+      const r = await fetch('/api/protokoll/' + kategorie + '/' + id, { method: 'DELETE' });
+      if (r.ok) {
+        const el = document.getElementById('doc-' + id);
+        if (el) el.remove();
+      } else {
+        alert('Löschen fehlgeschlagen.');
+      }
+      closeConfirm();
+    };
+    document.getElementById('confirm-del-btn').onclick = () => _confirmAction && _confirmAction();
+    document.getElementById('confirm-overlay').classList.add('open');
+  }
+
+  function closeConfirm() {
+    document.getElementById('confirm-overlay').classList.remove('open');
+    _confirmAction = null;
+  }
+
+  document.getElementById('confirm-overlay').addEventListener('click', e => {
+    if (e.target === document.getElementById('confirm-overlay')) closeConfirm();
+  });
+
+  // ── Hinzufügen ────────────────────────────────────────────
+  function openHinzufuegen(kategorie) {
+    document.getElementById('h-kategorie').value = kategorie;
+    document.getElementById('h-kategorie-sel').value = kategorie;
+    openModal('modal-hinzufuegen');
+  }
+
+  async function speicherDokument() {
+    const body = {
+      kategorie:       document.getElementById('h-kategorie').value,
+      datum:           document.getElementById('h-datum').value,
+      quelle:          document.getElementById('h-quelle').value,
+      titel:           document.getElementById('h-titel').value,
+      zusammenfassung: document.getElementById('h-zusammenfassung').value,
+      volltext:        document.getElementById('h-volltext').value
+    };
+    if (!body.titel.trim()) { alert('Titel ist Pflichtfeld.'); return; }
+    const r = await fetch('/api/protokoll/hinzufuegen', {
+      method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body)
+    });
+    if (r.ok) { location.reload(); }
+    else { alert('Fehler beim Speichern.'); }
+  }
+</script>
+{% endblock %}

@@ -1,0 +1,492 @@
+{% extends "base.html" %}
+{% block title %}Administration{% endblock %}
+{% block page_title %}Administration{% endblock %}
+{% block page_subtitle %}Stammdatenverwaltung · CareBridge Demo{% endblock %}
+
+{% block content %}
+<style>
+  .admin-warn {
+    display:flex;align-items:center;gap:12px;
+    padding:12px 16px;
+    background:#fffbeb;border:1px solid #FCD34D;border-radius:var(--radius);
+    margin-bottom:16px;font-size:12px;color:#92400e;
+  }
+  .admin-tabs { display:flex;gap:2px;margin-bottom:16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:4px;width:fit-content;box-shadow:var(--shadow); }
+  .admin-tab { padding:6px 18px;font-size:12px;font-weight:500;border:none;border-radius:4px;cursor:pointer;background:transparent;color:var(--ink-3);font-family:var(--sans);transition:all 0.15s; }
+  .admin-tab:hover { color:var(--ink);background:var(--surface-2); }
+  .admin-tab.active { background:var(--blue);color:#fff; }
+  .admin-panel { display:none; }
+  .admin-panel.active { display:block; }
+  .admin-table { width:100%;border-collapse:collapse;font-size:12px; }
+  .admin-table th { background:var(--surface-2);padding:8px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:0.7px;color:var(--ink-3);border-bottom:2px solid var(--border); }
+  .admin-table td { padding:9px 12px;border-bottom:1px solid var(--border-soft);vertical-align:middle; }
+  .admin-table tr:last-child td { border-bottom:none; }
+  .admin-table tr:hover td { background:var(--surface-2); }
+  .admin-input { width:100%;padding:5px 8px;border:1px solid var(--border);border-radius:4px;font-family:var(--sans);font-size:12px;color:var(--ink);background:var(--surface); }
+  .admin-input:focus { outline:none;border-color:var(--blue);box-shadow:0 0 0 2px rgba(26,86,219,0.12); }
+  .btn-add { background:var(--blue);color:#fff;border:none;border-radius:var(--radius);padding:7px 16px;font-size:12px;font-weight:500;cursor:pointer;font-family:var(--sans); }
+  .btn-add:hover { background:var(--blue-mid); }
+  .btn-del { background:transparent;color:var(--red);border:1px solid #FCA5A5;border-radius:4px;padding:3px 10px;font-size:11px;cursor:pointer;font-family:var(--sans); }
+  .btn-del:hover { background:#fff5f5; }
+  .btn-save-cfg { background:var(--green,#0D7A5C);color:#fff;border:none;border-radius:var(--radius);padding:8px 20px;font-size:12px;font-weight:500;cursor:pointer;font-family:var(--sans); }
+  .btn-save-cfg:hover { opacity:0.9; }
+  .save-bar { display:flex;align-items:center;justify-content:space-between;padding:12px 0 0;margin-top:12px;border-top:1px solid var(--border); }
+  .badge-rolle { padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600; }
+  .badge-pl { background:#dbeafe;color:#1e40af; }
+  .badge-pf { background:#dcfce7;color:#166534; }
+  .badge-ph { background:#f3f4f6;color:#374151; }
+</style>
+
+<!-- Flash-Nachrichten -->
+<div id="flash-msg" style="display:none;padding:12px 16px;border-radius:var(--radius);margin-bottom:12px;font-size:12px;font-weight:500"></div>
+
+<!-- Warnhinweis -->
+<div class="admin-warn">
+  <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="flex-shrink:0"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+  <span><strong>Demo-Bereich:</strong> In der Produktivversion ist dieser Bereich nur für Pflegeleitung und Administratoren zugänglich. Änderungen hier wirken sich auf alle Dokumentationen aus.</span>
+</div>
+
+<!-- Tab-Leiste -->
+<div class="admin-tabs">
+  <button class="admin-tab active" onclick="switchAdminTab('patienten', this)">👤 Patienten</button>
+  <button class="admin-tab" onclick="switchAdminTab('personal', this)">👥 Pflegepersonal</button>
+  <button class="admin-tab" onclick="switchAdminTab('leistungen', this)">📋 Leistungsvorlagen</button>
+</div>
+
+<!-- ═══ TAB: PATIENTEN ═══ -->
+<div id="tab-patienten" class="admin-panel active">
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">Patienten</div>
+      <button class="btn-add" onclick="openPatientModal()">+ Neuer Patient</button>
+    </div>
+    <div class="table-wrap">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Patienten-ID</th>
+            <th>Name</th>
+            <th>Geburtsdatum</th>
+            <th>Zimmer</th>
+            <th>Diagnose</th>
+            <th>Beatmungsgerät</th>
+            <th>Aktiv</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="tbody-patienten"></tbody>
+      </table>
+    </div>
+    <div class="save-bar" style="padding:12px 16px">
+      <span id="status-patienten" style="font-size:11px;color:var(--ink-3)"></span>
+      <button class="btn-save-cfg" onclick="saveConfig('patienten')">Speichern</button>
+    </div>
+  </div>
+
+  <!-- Dokumentationsintervalle -->
+  <div class="card" style="margin-top:16px">
+    <div class="card-header">
+      <div class="card-title">Dokumentationsintervalle</div>
+      <span class="badge badge-gray" id="intervall-patient-name">—</span>
+    </div>
+    <div class="card-body">
+      <p style="font-size:12px;color:var(--ink-3);margin-bottom:14px">
+        Legt fest, nach wie vielen Stunden ohne Eintrag ein Parameter in der Intensivkurve rot markiert wird.
+        Gilt für den oben ausgewählten (ersten aktiven) Patienten.
+      </p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px 24px" id="intervall-grid">
+        <!-- wird via JS gerendert -->
+      </div>
+      <div class="save-bar" style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border-soft)">
+        <span id="status-intervalle" style="font-size:11px;color:var(--ink-3)"></span>
+        <button class="btn-save-cfg" onclick="saveIntervalle()">Intervalle speichern</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ TAB: PERSONAL ═══ -->
+<div id="tab-personal" class="admin-panel">
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">Pflegepersonal</div>
+      <button class="btn-add" onclick="addPersonal()">+ Person hinzufügen</button>
+    </div>
+    <div class="table-wrap">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th style="width:80px">Kürzel</th>
+            <th>Name</th>
+            <th>Rolle</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="tbody-personal"></tbody>
+      </table>
+    </div>
+    <div class="save-bar" style="padding:12px 16px">
+      <span id="status-personal" style="font-size:11px;color:var(--ink-3)"></span>
+      <button class="btn-save-cfg" onclick="saveConfig('personal')">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ TAB: LEISTUNGSVORLAGEN ═══ -->
+<div id="tab-leistungen" class="admin-panel">
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">Leistungsvorlagen</div>
+      <button class="btn-add" onclick="addLeistung()">+ Vorlage hinzufügen</button>
+    </div>
+    <div class="table-wrap">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th style="width:70px">ID/Kürzel</th>
+            <th>Bezeichnung</th>
+            <th>Uhrzeiten</th>
+            <th style="width:70px">Pflicht</th>
+            <th style="width:90px">Intervall (h)</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="tbody-leistungen"></tbody>
+      </table>
+    </div>
+    <div class="save-bar" style="padding:12px 16px">
+      <span id="status-leistungen" style="font-size:11px;color:var(--ink-3)"></span>
+      <button class="btn-save-cfg" onclick="saveConfig('leistungen')">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Neuer Patient -->
+<div id="modal-neuer-patient" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:1000;align-items:center;justify-content:center">
+  <div style="background:var(--surface);border-radius:8px;box-shadow:0 8px 32px rgba(0,0,0,0.18);width:520px;max-width:95vw;max-height:90vh;overflow-y:auto">
+    <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+      <div style="font-size:14px;font-weight:600">Neuen Patienten anlegen</div>
+      <button onclick="closePatientModal()" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--ink-3)">&times;</button>
+    </div>
+    <div style="padding:20px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+        <div>
+          <label style="display:block;font-size:11px;font-weight:600;color:var(--ink-3);text-transform:uppercase;letter-spacing:0.7px;margin-bottom:5px">Name *</label>
+          <input class="admin-input" id="np-name" placeholder="Vor- und Nachname" style="padding:7px 10px;font-size:13px">
+        </div>
+        <div>
+          <label style="display:block;font-size:11px;font-weight:600;color:var(--ink-3);text-transform:uppercase;letter-spacing:0.7px;margin-bottom:5px">Geburtsdatum</label>
+          <input class="admin-input" id="np-geb" type="date" style="padding:7px 10px;font-size:13px">
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+        <div>
+          <label style="display:block;font-size:11px;font-weight:600;color:var(--ink-3);text-transform:uppercase;letter-spacing:0.7px;margin-bottom:5px">Zimmer</label>
+          <input class="admin-input" id="np-zimmer" placeholder="z.B. Zimmer 3" style="padding:7px 10px;font-size:13px">
+        </div>
+        <div>
+          <label style="display:block;font-size:11px;font-weight:600;color:var(--ink-3);text-transform:uppercase;letter-spacing:0.7px;margin-bottom:5px">Behandelnder Arzt</label>
+          <input class="admin-input" id="np-arzt" placeholder="z.B. Dr. Hoffmann" style="padding:7px 10px;font-size:13px">
+        </div>
+      </div>
+      <div style="margin-bottom:14px">
+        <label style="display:block;font-size:11px;font-weight:600;color:var(--ink-3);text-transform:uppercase;letter-spacing:0.7px;margin-bottom:5px">Diagnose</label>
+        <input class="admin-input" id="np-diagnose" placeholder="z.B. COPD Gold IV" style="padding:7px 10px;font-size:13px">
+      </div>
+      <div style="margin-bottom:14px">
+        <label style="display:block;font-size:11px;font-weight:600;color:var(--ink-3);text-transform:uppercase;letter-spacing:0.7px;margin-bottom:5px">Beatmungsgerät</label>
+        <input class="admin-input" id="np-beatmung" placeholder="z.B. Astral 150 (ResMed)" style="padding:7px 10px;font-size:13px">
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--surface-2);border-radius:var(--radius)">
+        <input type="checkbox" id="np-beatmungspflichtig" checked style="width:16px;height:16px;cursor:pointer">
+        <label for="np-beatmungspflichtig" style="font-size:13px;cursor:pointer">Beatmungspflichtig</label>
+      </div>
+    </div>
+    <div style="padding:14px 20px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+      <span id="np-status" style="font-size:12px;color:var(--red)"></span>
+      <div style="display:flex;gap:8px">
+        <button onclick="closePatientModal()" style="background:transparent;border:1px solid var(--border);border-radius:var(--radius);padding:7px 14px;font-size:12px;cursor:pointer;font-family:var(--sans)">Abbrechen</button>
+        <button onclick="speicherNeuerPatient()" class="btn-add">Patient anlegen</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+let config = { patienten: [], personal: [], leistungsvorlagen: [] };
+
+// ── Tab switching ──────────────────────────────────────────
+function switchAdminTab(name, btn) {
+  document.querySelectorAll('.admin-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.admin-tab').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ── Load config ────────────────────────────────────────────
+async function loadConfig() {
+  try {
+    const r = await fetch('/api/config');
+    config = await r.json();
+  } catch(e) {}
+  renderPatienten();
+  renderPersonal();
+  renderLeistungen();
+  renderIntervalle();
+}
+
+// ── Intervalle ─────────────────────────────────────────────
+const INTERVALL_FELDER = [
+  { key:'spo2',        label:'SpO₂' },
+  { key:'hf',          label:'Herzfrequenz' },
+  { key:'bd_sys',      label:'Blutdruck (sys)' },
+  { key:'bd_dia',      label:'Blutdruck (dia)' },
+  { key:'af',          label:'Atemfrequenz' },
+  { key:'beatmung',    label:'IPAP / EPAP' },
+  { key:'vt',          label:'Tidalvolumen' },
+  { key:'leckage',     label:'Leckage' },
+  { key:'lagerung',    label:'Lagerung' },
+];
+
+function getActivePatient() {
+  return config.patienten && config.patienten.find(p => p.aktiv) || config.patienten[0] || null;
+}
+
+function renderIntervalle() {
+  const p = getActivePatient();
+  document.getElementById('intervall-patient-name').textContent = p ? p.name : '—';
+  const iv = (p && p.intervalle) || {};
+  const grid = document.getElementById('intervall-grid');
+  grid.innerHTML = INTERVALL_FELDER.map(f => `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border-soft)">
+      <label style="font-size:12px;color:var(--ink-2)">${f.label}</label>
+      <div style="display:flex;align-items:center;gap:6px">
+        <input type="number" min="1" max="8" value="${iv[f.key]||2}"
+               style="width:56px;padding:4px 6px;border:1px solid var(--border);border-radius:4px;font-family:var(--mono);font-size:12px;text-align:center"
+               id="iv-${f.key}" onchange="markIntervalleChanged()">
+        <span style="font-size:11px;color:var(--ink-3)">Stunden</span>
+      </div>
+    </div>`).join('');
+}
+
+function markIntervalleChanged() {
+  const el = document.getElementById('status-intervalle');
+  el.textContent = '● Nicht gespeichert';
+  el.style.color = 'var(--amber)';
+}
+
+async function saveIntervalle() {
+  const p = getActivePatient();
+  if (!p) return;
+  if (!p.intervalle) p.intervalle = {};
+  INTERVALL_FELDER.forEach(f => {
+    const inp = document.getElementById('iv-' + f.key);
+    if (inp) p.intervalle[f.key] = parseInt(inp.value) || 2;
+  });
+  try {
+    const r = await fetch('/api/config/save', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(config)
+    });
+    const el = document.getElementById('status-intervalle');
+    if (r.ok) {
+      el.textContent = '✓ Gespeichert ' + new Date().toLocaleTimeString('de-DE', { hour:'2-digit', minute:'2-digit' });
+      el.style.color = 'var(--green)';
+    } else {
+      el.textContent = '✗ Fehler'; el.style.color = 'var(--red)';
+    }
+  } catch(e) {
+    document.getElementById('status-intervalle').textContent = '✗ ' + e.message;
+    document.getElementById('status-intervalle').style.color = 'var(--red)';
+  }
+}
+
+// ── Render: Patienten ──────────────────────────────────────
+function renderPatienten() {
+  const tb = document.getElementById('tbody-patienten');
+  tb.innerHTML = '';
+  config.patienten.forEach((p, i) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><input class="admin-input" value="${esc(p.id)}" onchange="config.patienten[${i}].id=this.value"></td>
+      <td><input class="admin-input" value="${esc(p.name)}" onchange="config.patienten[${i}].name=this.value"></td>
+      <td><input class="admin-input" style="width:110px" value="${esc(p.geburtsdatum)}" onchange="config.patienten[${i}].geburtsdatum=this.value"></td>
+      <td><input class="admin-input" style="width:90px" value="${esc(p.zimmer)}" onchange="config.patienten[${i}].zimmer=this.value"></td>
+      <td><input class="admin-input" value="${esc(p.diagnose)}" onchange="config.patienten[${i}].diagnose=this.value"></td>
+      <td><input class="admin-input" value="${esc(p.beatmungsgeraet||'')}" onchange="config.patienten[${i}].beatmungsgeraet=this.value"></td>
+      <td style="text-align:center"><input type="checkbox" ${p.aktiv ? 'checked' : ''} onchange="config.patienten[${i}].aktiv=this.checked"></td>
+      <td><button class="btn-del" onclick="deleteRow('patienten',${i})">✕</button></td>`;
+    tb.appendChild(tr);
+  });
+}
+
+// ── Render: Personal ──────────────────────────────────────
+function renderPersonal() {
+  const tb = document.getElementById('tbody-personal');
+  tb.innerHTML = '';
+  config.personal.forEach((p, i) => {
+    const rolleClass = p.rolle === 'Pflegeleitung' ? 'badge-pl' : p.rolle === 'Pflegefachmann' ? 'badge-pf' : 'badge-ph';
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><input class="admin-input" style="width:60px;font-family:var(--mono);font-weight:600" value="${esc(p.kuerzel)}" onchange="config.personal[${i}].kuerzel=this.value.toUpperCase();this.value=this.value.toUpperCase()"></td>
+      <td><input class="admin-input" value="${esc(p.name)}" onchange="config.personal[${i}].name=this.value"></td>
+      <td>
+        <select class="admin-input" style="width:180px" onchange="config.personal[${i}].rolle=this.value">
+          <option value="Pflegeleitung" ${p.rolle==='Pflegeleitung'?'selected':''}>Pflegeleitung</option>
+          <option value="Pflegefachmann" ${p.rolle==='Pflegefachmann'?'selected':''}>Pflegefachmann/-frau</option>
+          <option value="Pflegehilfskraft" ${p.rolle==='Pflegehilfskraft'?'selected':''}>Pflegehilfskraft</option>
+        </select>
+      </td>
+      <td><button class="btn-del" onclick="deleteRow('personal',${i})">✕</button></td>`;
+    tb.appendChild(tr);
+  });
+}
+
+// ── Render: Leistungsvorlagen ──────────────────────────────
+function renderLeistungen() {
+  const tb = document.getElementById('tbody-leistungen');
+  tb.innerHTML = '';
+  config.leistungsvorlagen.forEach((l, i) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><input class="admin-input" style="width:60px;font-family:var(--mono);font-weight:600" value="${esc(l.id)}" onchange="config.leistungsvorlagen[${i}].id=this.value"></td>
+      <td><input class="admin-input" value="${esc(l.name)}" onchange="config.leistungsvorlagen[${i}].name=this.value"></td>
+      <td><input class="admin-input" value="${esc((l.zeiten||[]).join(', '))}" placeholder="08:00, 14:00 …" onchange="config.leistungsvorlagen[${i}].zeiten=this.value.split(',').map(s=>s.trim()).filter(Boolean)"></td>
+      <td style="text-align:center"><input type="checkbox" ${l.pflicht ? 'checked' : ''} onchange="config.leistungsvorlagen[${i}].pflicht=this.checked"></td>
+      <td><input class="admin-input" style="width:70px" type="number" min="1" max="24" value="${l.intervall_h||''}" placeholder="—" onchange="config.leistungsvorlagen[${i}].intervall_h=this.value?parseInt(this.value):null"></td>
+      <td><button class="btn-del" onclick="deleteRow('leistungsvorlagen',${i})">✕</button></td>`;
+    tb.appendChild(tr);
+  });
+}
+
+// ── Neuer Patient Modal ────────────────────────────────────
+function openPatientModal() {
+  document.getElementById('np-name').value      = '';
+  document.getElementById('np-geb').value       = '';
+  document.getElementById('np-zimmer').value    = '';
+  document.getElementById('np-arzt').value      = '';
+  document.getElementById('np-diagnose').value  = '';
+  document.getElementById('np-beatmung').value  = '';
+  document.getElementById('np-beatmungspflichtig').checked = true;
+  document.getElementById('np-status').textContent = '';
+  const m = document.getElementById('modal-neuer-patient');
+  m.style.display = 'flex';
+}
+
+function closePatientModal() {
+  document.getElementById('modal-neuer-patient').style.display = 'none';
+}
+
+document.addEventListener('click', e => {
+  const m = document.getElementById('modal-neuer-patient');
+  if (m && e.target === m) closePatientModal();
+});
+
+async function speicherNeuerPatient() {
+  const name = document.getElementById('np-name').value.trim();
+  if (!name) {
+    document.getElementById('np-status').textContent = 'Name ist Pflichtfeld.';
+    return;
+  }
+  const body = {
+    name,
+    geburtsdatum:      document.getElementById('np-geb').value,
+    zimmer:            document.getElementById('np-zimmer').value,
+    arzt:              document.getElementById('np-arzt').value,
+    diagnose:          document.getElementById('np-diagnose').value,
+    beatmungsgeraet:   document.getElementById('np-beatmung').value,
+    beatmungspflichtig: document.getElementById('np-beatmungspflichtig').checked
+  };
+  document.getElementById('np-status').textContent = 'Wird gespeichert…';
+  try {
+    const r = await fetch('/api/patient/hinzufuegen', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    const data = await r.json();
+    if (data.ok) {
+      window.location.href = '/admin?saved=1&neu=' + encodeURIComponent(data.patient_id) + '&name=' + encodeURIComponent(name);
+    } else {
+      document.getElementById('np-status').textContent = data.error || 'Fehler beim Anlegen.';
+    }
+  } catch(e) {
+    document.getElementById('np-status').textContent = 'Netzwerkfehler: ' + e.message;
+  }
+}
+
+// ── Add rows ───────────────────────────────────────────────
+function addPatient() {
+  openPatientModal();
+}
+
+function addPersonal() {
+  config.personal.push({ kuerzel: '', name: '', rolle: 'Pflegefachmann' });
+  renderPersonal();
+}
+
+function addLeistung() {
+  config.leistungsvorlagen.push({ id: '', name: '', zeiten: [], pflicht: false, intervall_h: null });
+  renderLeistungen();
+}
+
+function deleteRow(section, idx) {
+  config[section].splice(idx, 1);
+  if (section === 'patienten') renderPatienten();
+  else if (section === 'personal') renderPersonal();
+  else renderLeistungen();
+}
+
+// ── Save config ────────────────────────────────────────────
+async function saveConfig(section) {
+  const statusMap = { patienten: 'status-patienten', personal: 'status-personal', leistungen: 'status-leistungen' };
+  const el = document.getElementById(statusMap[section]);
+  if (el) { el.textContent = 'Wird gespeichert…'; el.style.color = 'var(--ink-3)'; }
+  try {
+    const r = await fetch('/api/config/save', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(config)
+    });
+    if (r.ok) {
+      window.location.href = '/admin?saved=1';
+    } else {
+      if (el) { el.textContent = '✗ Fehler beim Speichern'; el.style.color = 'var(--red)'; }
+    }
+  } catch(e) {
+    if (el) { el.textContent = '✗ ' + e.message; el.style.color = 'var(--red)'; }
+  }
+}
+
+// ── Page load: Zeige Flash-Nachrichten ────────────────────
+(function() {
+  const params = new URLSearchParams(window.location.search);
+  const flash = document.getElementById('flash-msg');
+  if (!flash) return;
+  if (params.get('saved') === '1') {
+    const neuId   = params.get('neu');
+    const neuName = params.get('name');
+    if (neuId && neuName) {
+      flash.textContent = '✓ Patient "' + decodeURIComponent(neuName) + '" (' + decodeURIComponent(neuId) + ') wurde angelegt und ist jetzt aktiv.';
+      flash.style.cssText = 'display:block;padding:12px 16px;border-radius:var(--radius);margin-bottom:12px;font-size:12px;font-weight:500;background:#f0fdf8;border:1px solid #6EE7B7;color:#0D7A5C';
+    } else {
+      flash.textContent = '✓ Änderungen wurden gespeichert. Neue Patienten sind jetzt im Dropdown verfügbar.';
+      flash.style.cssText = 'display:block;padding:12px 16px;border-radius:var(--radius);margin-bottom:12px;font-size:12px;font-weight:500;background:#eff6ff;border:1px solid #BFDBFE;color:#1e40af';
+    }
+    // Clean URL
+    history.replaceState({}, '', '/admin');
+  }
+})();
+
+// ── Helper ────────────────────────────────────────────────
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+loadConfig();
+</script>
+{% endblock %}

@@ -1,0 +1,36 @@
+{
+  "patient_id": "P-2024-0042",
+  "letzte_aktualisierung": "2026-06-20",
+  "themenfelder": {
+    "kognition": {
+      "selbstbeschreibung": "Test",
+      "fachliche_einschaetzung": "Patient ist kognitiv vollständig orientiert und wach. Kommunikation ausschließlich über Augensteuerungssystem (Tobii). Versteht komplexe Anweisungen. Gedächtnis und Orientierung intakt.",
+      "massnahmen": "Augensteuerung täglich überprüfen und reinigen. Kommunikationstafel als Backup bereithalten. Beim Ansprechen immer Blickkontakt herstellen."
+    },
+    "mobilitaet": {
+      "selbstbeschreibung": "Ich kann mich nicht mehr selbst bewegen. Ich bin vollständig auf Hilfe angewiesen.",
+      "fachliche_einschaetzung": "Vollständige Immobilität bei ALS. Tetraparese. Lagerungswechsel alle 2 Stunden erforderlich zur Dekubitusprophylaxe. Anti-Dekubitus-Matratze vorhanden.",
+      "massnahmen": "2-stündliche Lagerungswechsel nach Lagerungsplan. Passivbewegungen täglich. Lagerungsprotokoll führen."
+    },
+    "krankheit": {
+      "selbstbeschreibung": "Ich weiß, dass meine Krankheit fortschreitet. Ich habe Angst vor Atemnot.",
+      "fachliche_einschaetzung": "ALS mit progredienter Entwicklung. Vollständige Beatmungspflichtigkeit seit 11/2022. Schluckstörung mit pürierter Kost. Neurologische Kontrollen quartalsweise.",
+      "massnahmen": "Regelmäßige psychologische Begleitung. Palliativversorgung eingebunden. Notfallplan für Atemnot liegt am Bett."
+    },
+    "selbstversorgung": {
+      "selbstbeschreibung": "Ich brauche bei allem Hilfe — beim Essen, beim Waschen, beim Anziehen.",
+      "fachliche_einschaetzung": "Vollpflegebedarf in allen Bereichen. Ganzkörperpflege täglich im Bett. Mundpflege 3x täglich. Ernährung püriert, ggf. PEG-Anlage evaluieren.",
+      "massnahmen": "GKP täglich Frühdienst. Mundpflege 3x täglich. Pürierte Kost, angedickte Flüssigkeiten. Hautpflege täglich."
+    },
+    "soziales": {
+      "selbstbeschreibung": "Meine Frau kommt jeden Tag. Das ist mir sehr wichtig.",
+      "fachliche_einschaetzung": "Gut eingebundenes Sozialumfeld. Ehefrau täglich anwesend und aktiv in Pflege eingebunden. Sohn besucht regelmäßig.",
+      "massnahmen": "Angehörigenbesuche fördern. Ehefrau in Pflegemaßnahmen einweisen. Kommunikation über Augensteuerung erklären."
+    },
+    "haushalt": {
+      "selbstbeschreibung": "Ich lebe in einer Pflegeeinrichtung und muss mir darüber keine Gedanken machen.",
+      "fachliche_einschaetzung": "Patient lebt in der Beatmungs-WG Musterstadt. Vollversorgung durch Einrichtung. Wohnumfeld ist behindertengerecht und auf Pflegebedarf angepasst.",
+      "massnahmen": "Regelmäßige Überprüfung der Zimmerausstattung. Pflegebettfunktionen täglich kontrollieren. Beleuchtung und Temperatur nach Patientenwunsch."
+    }
+  }
+}

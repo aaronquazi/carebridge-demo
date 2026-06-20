@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block page_subtitle %}Übersicht · {{ patient.station }}{% endblock %}
+
+{% block content %}
+
+{# ── Compliance-Statusleiste ── #}
+{% if compliance is defined %}
+{% set cs = compliance_status %}
+<div style="border:1px solid {% if cs=='red' %}#FCA5A5{% elif cs=='yellow' %}#FCD34D{% else %}#6EE7B7{% endif %};border-radius:var(--radius);background:{% if cs=='red' %}#fff5f5{% elif cs=='yellow' %}#fffbeb{% else %}#f0fdf8{% endif %};margin-bottom:16px;overflow:hidden">
+  <!-- Header -->
+  <div style="padding:10px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid {% if cs=='red' %}#FCA5A5{% elif cs=='yellow' %}#FCD34D{% else %}#6EE7B7{% endif %}">
+    <div style="display:flex;align-items:center;gap:10px">
+      <span style="width:10px;height:10px;border-radius:50%;background:{% if cs=='red' %}#C0392B{% elif cs=='yellow' %}#B45309{% else %}#0D7A5C{% endif %};flex-shrink:0"></span>
+      <span style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:{% if cs=='red' %}#C0392B{% elif cs=='yellow' %}#92400e{% else %}#0D7A5C{% endif %}">
+        Dokumentationsstatus
+      </span>
+      {% set n_overdue = compliance | selectattr('severity', 'ne', 'green') | list | length %}
+      {% if n_overdue > 0 %}
+      <span style="font-size:11px;color:{% if cs=='red' %}#C0392B{% else %}#92400e{% endif %};font-weight:500">
+        — {{ n_overdue }} Position{% if n_overdue != 1 %}en{% endif %} überfällig
+        {% if cs == 'red' %} · <strong>Übergabe gesperrt</strong>{% endif %}
+      </span>
+      {% else %}
+      <span style="font-size:11px;color:#0D7A5C;font-weight:500">— alle Dokumentationen fristgerecht</span>
+      {% endif %}
+    </div>
+    <span style="font-size:11px;color:var(--ink-3)">Nächste: {{ compliance_next }}</span>
+  </div>
+  <!-- Zeilen -->
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:0">
+    {% for item in compliance %}
+    <div style="padding:8px 16px;display:flex;align-items:flex-start;gap:8px;border-right:1px solid {% if cs=='red' %}#FCA5A5{% elif cs=='yellow' %}#FCD34D{% else %}#d1fae5{% endif %};border-bottom:1px solid {% if cs=='red' %}#FCA5A5{% elif cs=='yellow' %}#FCD34D{% else %}#d1fae5{% endif %}">
+      <span style="font-size:14px;flex-shrink:0;margin-top:1px">
+        {% if item.severity == 'red' %}🔴{% elif item.severity == 'yellow' %}🟡{% else %}✅{% endif %}
+      </span>
+      <div>
+        <div style="font-size:11px;font-weight:600;color:var(--ink)">{{ item.label }}</div>
+        <div style="font-size:10px;color:{% if item.severity == 'red' %}#C0392B{% elif item.severity == 'yellow' %}#92400e{% else %}var(--ink-3){% endif %}">
+          {% if item.overdue_str %}{{ item.overdue_str }}{% else %}{{ item.last_str }}{% endif %}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+{% if warnungen %}
+<div class="stack mb-16">
+  {% for w in warnungen %}
+  <div class="warn-banner">
+    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="flex-shrink:0;margin-top:1px"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+    <span><strong>Hinweis:</strong> {{ w }}</span>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<!-- Patient Info -->
+<div class="card mb-16">
+  <div class="card-header">
+    <div class="card-title">
+      <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+      Patientendaten
+    </div>
+    <span class="badge badge-blue">{{ patient.id }}</span>
+  </div>
+  <div class="card-body">
+    <div class="grid-3">
+      <div>
+        <div class="text-xs text-muted mb-4">Name</div>
+        <div class="fw-500">{{ patient.name }}</div>
+        <div class="text-xs text-muted mt-4">*{{ patient.geburtsdatum }} ({{ patient.alter }} J.)</div>
+      </div>
+      <div>
+        <div class="text-xs text-muted mb-4">Diagnose</div>
+        <div class="fw-500 text-sm">{{ patient.diagnose }}</div>
+        <div class="text-xs text-muted mt-4">Beatmung seit {{ patient.beatmungspflichtig_seit }}</div>
+      </div>
+      <div>
+        <div class="text-xs text-muted mb-4">Behandelnder Arzt</div>
+        <div class="fw-500">{{ patient.arzt }}</div>
+        <div class="text-xs text-muted mt-4">{{ patient.station }} · {{ patient.zimmer }}</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Vitalwerte -->
+<div class="grid-4 mb-16">
+  <div class="stat-tile {% if letzter.spo2 and letzter.spo2 >= 92 %}ok{% elif letzter.spo2 and letzter.spo2 >= 88 %}warn{% else %}alert{% endif %}">
+    <div class="stat-label">SpO₂</div>
+    <div class="stat-value">{{ letzter.spo2 or '—' }}<span class="stat-unit">%</span></div>
+    <div class="stat-status">
+      <span class="dot {% if letzter.spo2 and letzter.spo2 >= 92 %}dot-green{% else %}dot-amber{% endif %}"></span>
+      <span class="text-xs text-muted">Alarmgrenze &gt; 88%</span>
+    </div>
+  </div>
+
+  <div class="stat-tile {% if letzter.puls and 50 <= letzter.puls <= 100 %}ok{% else %}warn{% endif %}">
+    <div class="stat-label">Puls</div>
+    <div class="stat-value">{{ letzter.puls or '—' }}<span class="stat-unit">/min</span></div>
+    <div class="stat-status">
+      <span class="dot dot-green"></span>
+      <span class="text-xs text-muted">{{ letzter.blutdruck or '—' }} mmHg</span>
+    </div>
+  </div>
+
+  <div class="stat-tile ok">
+    <div class="stat-label">Beatmung</div>
+    <div class="stat-value" style="font-size:18px">Aktiv</div>
+    <div class="stat-status">
+      <span class="dot dot-green"></span>
+      <span class="text-xs text-muted">IPAP {{ letzter.ipap or '—' }} mbar · Vt {{ letzter.tidalvolumen or '—' }} ml</span>
+    </div>
+  </div>
+
+  <div class="stat-tile {% if leistungen_offen == 0 %}ok{% elif leistungen_offen <= 2 %}warn{% else %}alert{% endif %}">
+    <div class="stat-label">Offene Leistungen</div>
+    <div class="stat-value">{{ leistungen_offen }}</div>
+    <div class="stat-status">
+      <span class="dot {% if leistungen_offen == 0 %}dot-green{% elif leistungen_offen <= 2 %}dot-amber{% else %}dot-red{% endif %}"></span>
+      <span class="text-xs text-muted"><a href="/leistungsnachweis" style="color:inherit">Leistungsnachweis öffnen →</a></span>
+    </div>
+  </div>
+</div>
+
+<!-- Schnellübersicht -->
+<div class="grid-2">
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">Beatmung aktuell</div>
+      <span class="badge badge-green">● Aktiv</span>
+    </div>
+    <div class="card-body">
+      <div class="grid-2" style="gap:8px">
+        <div class="param-box">
+          <div class="param-box-label">IPAP</div>
+          <div class="param-box-value">22</div>
+          <div class="param-box-sub">mbar</div>
+        </div>
+        <div class="param-box">
+          <div class="param-box-label">EPAP</div>
+          <div class="param-box-value">6</div>
+          <div class="param-box-sub">mbar</div>
+        </div>
+        <div class="param-box">
+          <div class="param-box-label">Tidalvolumen</div>
+          <div class="param-box-value">{{ letzter.tidalvolumen or '—' }}</div>
+          <div class="param-box-sub">ml (Soll: 600 ml)</div>
+        </div>
+        <div class="param-box">
+          <div class="param-box-label">Leckage</div>
+          <div class="param-box-value">{{ letzter.leckage or '—' }}</div>
+          <div class="param-box-sub">L/min (Max: 40)</div>
+        </div>
+      </div>
+      <div class="mt-16">
+        <a href="/beatmungsverordnung" style="font-size:12px;color:var(--blue);text-decoration:none">Vollständige Verordnung →</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">Wichtige Hinweise</div>
+    </div>
+    <div class="card-body stack" style="gap:10px">
+      <div>
+        <div class="text-xs text-muted mb-4">Trachealkanüle</div>
+        <div class="text-sm fw-500">Shiley 8.0 gecufft</div>
+        <div class="text-xs text-muted">Nächster Wechsel: 12.07.2026</div>
+      </div>
+      <div class="divider" style="margin:4px 0"></div>
+      <div>
+        <div class="text-xs text-muted mb-4">Beatmungszeiten</div>
+        <div class="text-sm fw-500">22:00 – 08:00 Uhr (nächtlich)</div>
+        <div class="text-xs text-muted">Tagsüber nach Toleranz</div>
+      </div>
+      <div class="divider" style="margin:4px 0"></div>
+      <div>
+        <div class="text-xs text-muted mb-4">Cuffdruck</div>
+        <div class="text-sm fw-500">Soll: 20–25 cmH₂O</div>
+        <div class="text-xs text-muted">Kontrolle: jede Schicht</div>
+      </div>
+      <div class="divider" style="margin:4px 0"></div>
+      <div>
+        <a href="/uebergabe" style="font-size:12px;color:var(--blue);text-decoration:none;font-weight:500">→ Übergabe vorbereiten</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const _msg = sessionStorage.getItem('new_patient_alert');
+  if (_msg) { sessionStorage.removeItem('new_patient_alert'); alert(_msg); }
+</script>
+{% endblock %}

@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}CareBridge{% endblock %} — Demo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Serif:ital,wght@0,400;1,300&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:          #F0F2F5;
+      --surface:     #FFFFFF;
+      --surface-2:   #F7F8FA;
+      --border:      #DDE1E7;
+      --border-soft: #EAECF0;
+
+      --ink:         #0F1923;
+      --ink-2:       #4A5568;
+      --ink-3:       #8A9BB0;
+
+      --blue:        #1A56DB;
+      --blue-light:  #EBF1FF;
+      --blue-mid:    #3B74E8;
+
+      --green:       #0D7A5C;
+      --green-light: #E6F5F1;
+      --amber:       #B45309;
+      --amber-light: #FEF3C7;
+      --red:         #C0392B;
+      --red-light:   #FEE2E2;
+
+      --mono: 'IBM Plex Mono', monospace;
+      --sans: 'IBM Plex Sans', sans-serif;
+      --serif: 'IBM Plex Serif', serif;
+
+      --nav-w: 220px;
+      --radius: 6px;
+      --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--sans);
+      background: var(--bg);
+      color: var(--ink);
+      display: flex;
+      min-height: 100vh;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    /* ── NAV ── */
+    .nav {
+      width: var(--nav-w);
+      background: var(--ink);
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      top: 0; left: 0; bottom: 0;
+      z-index: 100;
+    }
+
+    .nav-brand {
+      padding: 20px 20px 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .nav-brand-name {
+      font-family: var(--serif);
+      font-size: 20px;
+      font-style: italic;
+      color: #fff;
+      letter-spacing: -0.3px;
+    }
+
+    .nav-brand-sub {
+      font-size: 10px;
+      color: var(--ink-3);
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin-top: 2px;
+    }
+
+    .nav-patient {
+      padding: 14px 20px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.04);
+    }
+
+    .nav-patient-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      color: var(--ink-3);
+      margin-bottom: 4px;
+    }
+
+    .nav-patient-name {
+      font-size: 13px;
+      font-weight: 500;
+      color: #fff;
+    }
+
+    .nav-patient-id {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--ink-3);
+      margin-top: 1px;
+    }
+
+    .nav-links {
+      padding: 12px 0;
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    .nav-section-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      color: var(--ink-3);
+      padding: 10px 20px 4px;
+    }
+
+    .nav-link {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 20px;
+      color: rgba(255,255,255,0.65);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 400;
+      transition: all 0.15s;
+      border-left: 2px solid transparent;
+    }
+
+    .nav-link:hover {
+      color: #fff;
+      background: rgba(255,255,255,0.06);
+    }
+
+    .nav-link.aktiv {
+      color: #fff;
+      background: rgba(26, 86, 219, 0.25);
+      border-left-color: var(--blue-mid);
+      font-weight: 500;
+    }
+
+    .nav-icon {
+      width: 16px;
+      height: 16px;
+      opacity: 0.7;
+      flex-shrink: 0;
+    }
+
+    .nav-link.aktiv .nav-icon { opacity: 1; }
+
+    .nav-demo-badge {
+      margin: 12px 16px;
+      padding: 8px 12px;
+      background: rgba(180, 83, 9, 0.2);
+      border: 1px solid rgba(180, 83, 9, 0.4);
+      border-radius: var(--radius);
+      font-size: 10px;
+      color: #FCD34D;
+      text-align: center;
+      letter-spacing: 0.5px;
+    }
+
+    /* ── MAIN ── */
+    .main {
+      margin-left: var(--nav-w);
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    .topbar {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    .topbar-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .page-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--ink);
+    }
+
+    .page-subtitle {
+      font-size: 12px;
+      color: var(--ink-3);
+    }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .time-display {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--ink-3);
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      padding: 4px 10px;
+      border-radius: var(--radius);
+    }
+
+    .content {
+      padding: 24px 28px;
+      flex: 1;
+    }
+
+    /* ── CARDS ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .card-header {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border-soft);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .card-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--ink);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card-body {
+      padding: 18px;
+    }
+
+    /* ── GRID ── */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+    .stack { display: flex; flex-direction: column; gap: 16px; }
+
+    /* ── STAT TILES ── */
+    .stat-tile {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px 18px;
+      box-shadow: var(--shadow);
+    }
+
+    .stat-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--ink-3);
+      margin-bottom: 6px;
+    }
+
+    .stat-value {
+      font-family: var(--mono);
+      font-size: 26px;
+      font-weight: 500;
+      color: var(--ink);
+      line-height: 1;
+    }
+
+    .stat-unit {
+      font-size: 12px;
+      color: var(--ink-3);
+      margin-left: 4px;
+      font-family: var(--sans);
+    }
+
+    .stat-status {
+      font-size: 11px;
+      margin-top: 6px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .stat-tile.ok    { border-top: 3px solid var(--green); }
+    .stat-tile.warn  { border-top: 3px solid var(--amber); }
+    .stat-tile.alert { border-top: 3px solid var(--red); }
+    .stat-tile.info  { border-top: 3px solid var(--blue); }
+
+    /* ── BADGES ── */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      border-radius: 3px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    .badge-green  { background: var(--green-light);  color: var(--green); }
+    .badge-amber  { background: var(--amber-light);  color: var(--amber); }
+    .badge-red    { background: var(--red-light);    color: var(--red); }
+    .badge-blue   { background: var(--blue-light);   color: var(--blue); }
+    .badge-gray   { background: var(--surface-2);    color: var(--ink-3); border: 1px solid var(--border); }
+
+    /* ── TABLE ── */
+    .table-wrap { overflow-x: auto; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    thead th {
+      text-align: left;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.7px;
+      color: var(--ink-3);
+      font-weight: 500;
+      padding: 8px 12px;
+      background: var(--surface-2);
+      border-bottom: 1px solid var(--border);
+    }
+
+    tbody tr {
+      border-bottom: 1px solid var(--border-soft);
+      transition: background 0.1s;
+    }
+
+    tbody tr:hover { background: var(--surface-2); }
+    tbody tr:last-child { border-bottom: none; }
+
+    td {
+      padding: 10px 12px;
+      color: var(--ink);
+    }
+
+    td.mono { font-family: var(--mono); font-size: 12px; }
+    td.muted { color: var(--ink-3); }
+
+    /* ── WARN BANNER ── */
+    .warn-banner {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 12px 16px;
+      background: var(--amber-light);
+      border: 1px solid #FCD34D;
+      border-radius: var(--radius);
+      font-size: 13px;
+      color: var(--amber);
+    }
+
+    .alert-banner {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 12px 16px;
+      background: var(--red-light);
+      border: 1px solid #FCA5A5;
+      border-radius: var(--radius);
+      font-size: 13px;
+      color: var(--red);
+    }
+
+    .ok-banner {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 16px;
+      background: var(--green-light);
+      border: 1px solid #6EE7B7;
+      border-radius: var(--radius);
+      font-size: 13px;
+      color: var(--green);
+    }
+
+    /* ── KV PAIRS ── */
+    .kv-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0;
+    }
+
+    .kv-row {
+      display: contents;
+    }
+
+    .kv-key {
+      padding: 8px 0;
+      font-size: 12px;
+      color: var(--ink-3);
+      border-bottom: 1px solid var(--border-soft);
+    }
+
+    .kv-val {
+      padding: 8px 0;
+      font-size: 13px;
+      color: var(--ink);
+      font-weight: 500;
+      border-bottom: 1px solid var(--border-soft);
+      text-align: right;
+    }
+
+    /* ── PARAM BOX ── */
+    .param-box {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px 16px;
+    }
+
+    .param-box-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--ink-3);
+      margin-bottom: 4px;
+    }
+
+    .param-box-value {
+      font-family: var(--mono);
+      font-size: 20px;
+      font-weight: 500;
+      color: var(--blue);
+    }
+
+    .param-box-sub {
+      font-size: 11px;
+      color: var(--ink-3);
+      margin-top: 2px;
+    }
+
+    /* ── DIVIDER ── */
+    .divider {
+      height: 1px;
+      background: var(--border-soft);
+      margin: 20px 0;
+    }
+
+    h2 { font-size: 14px; font-weight: 600; margin-bottom: 12px; }
+    h3 { font-size: 13px; font-weight: 600; margin-bottom: 8px; color: var(--ink-2); }
+
+    .mb-4  { margin-bottom: 4px; }
+    .mb-8  { margin-bottom: 8px; }
+    .mb-12 { margin-bottom: 12px; }
+    .mb-16 { margin-bottom: 16px; }
+    .mb-20 { margin-bottom: 20px; }
+    .mt-16 { margin-top: 16px; }
+    .mt-20 { margin-top: 20px; }
+
+    .text-sm   { font-size: 12px; }
+    .text-xs   { font-size: 11px; }
+    .text-muted { color: var(--ink-3); }
+    .text-mono  { font-family: var(--mono); }
+    .fw-500     { font-weight: 500; }
+
+    .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+    .dot-green  { background: var(--green); }
+    .dot-amber  { background: var(--amber); }
+    .dot-red    { background: var(--red); }
+    .dot-gray   { background: var(--ink-3); }
+
+    /* CHART CONTAINER */
+    .chart-container {
+      position: relative;
+      width: 100%;
+      height: 180px;
+    }
+
+    /* ── PATIENT SWITCHER DROPDOWN ── */
+    .patient-switcher { position: relative; }
+
+    .patient-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      cursor: pointer;
+      font-size: 13px;
+      font-family: var(--sans);
+      color: var(--ink);
+      transition: all 0.15s;
+      white-space: nowrap;
+      min-width: 280px;
+    }
+
+    .patient-btn:hover {
+      border-color: var(--blue-mid);
+      background: var(--blue-light);
+    }
+
+    .patient-dropdown {
+      position: absolute;
+      right: 0;
+      top: calc(100% + 6px);
+      width: 290px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+      z-index: 200;
+      display: none;
+    }
+
+    .patient-dropdown.open { display: block; }
+
+    .patient-dropdown-header {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      color: var(--ink-3);
+      padding: 10px 14px 6px;
+    }
+
+    .patient-dropdown-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 10px 14px;
+      cursor: pointer;
+      text-decoration: none;
+      color: var(--ink);
+      transition: background 0.1s;
+    }
+
+    .patient-dropdown-item:hover { background: var(--surface-2); }
+    .patient-dropdown-item.active { background: var(--blue-light); }
+
+    .patient-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      margin-top: 5px;
+      flex-shrink: 0;
+    }
+
+    .patient-dot-active  { background: var(--blue); }
+    .patient-dot-inactive { background: var(--ink-3); }
+
+    .patient-dropdown-footer {
+      border-top: 1px solid var(--border-soft);
+      padding: 8px 14px;
+    }
+
+    .patient-dropdown-footer a {
+      font-size: 12px;
+      color: var(--blue);
+      text-decoration: none;
+    }
+
+    .patient-dropdown-footer a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-brand">
+    <div class="nav-brand-name">CareBridge</div>
+    <div class="nav-brand-sub">Beatmungspflege Demo</div>
+  </div>
+
+  <div class="nav-patient">
+    <div class="nav-patient-label">Aktueller Patient</div>
+    <div class="nav-patient-name">{{ nav_patient.name }}</div>
+    <div class="nav-patient-id">{{ nav_patient.id }} · {{ nav_patient.zimmer }}</div>
+  </div>
+
+  <div class="nav-links">
+    <div class="nav-section-label">Übersicht</div>
+    <a href="/dashboard" class="nav-link {% if aktiv == 'dashboard' %}aktiv{% endif %}">
+      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+      </svg>
+      Dashboard
+    </a>
+    <a href="/uebergabe" class="nav-link {% if aktiv == 'uebergabe' %}aktiv{% endif %}" style="justify-content:space-between">
+      <span style="display:flex;align-items:center;gap:10px">
+        <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+        </svg>
+        Übergabe
+      </span>
+      {% if nav_compliance_count is defined and nav_compliance_count > 0 %}
+        <span style="background:{% if nav_compliance_status == 'red' %}#C0392B{% else %}#B45309{% endif %};color:#fff;border-radius:10px;font-size:10px;font-weight:700;padding:1px 7px;line-height:18px;flex-shrink:0">{{ nav_compliance_count }}</span>
+      {% elif nav_compliance_status is defined and nav_compliance_status == 'green' %}
+        <span style="width:8px;height:8px;border-radius:50%;background:#0D7A5C;display:inline-block;flex-shrink:0"></span>
+      {% endif %}
+    </a>
+
+    <a href="/arztuebergabe" class="nav-link {% if aktiv == 'arztuebergabe' %}aktiv{% endif %}">
+      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+      </svg>
+      Arztübergabe
+    </a>
+
+    <div class="nav-section-label" style="margin-top:8px;">Pflege-Dokumentation</div>
+    <a href="/pflegebericht" class="nav-link {% if aktiv == 'pflegebericht' %}aktiv{% endif %}">
+      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+      </svg>
+      Pflegebericht
+    </a>
+    <a href="/sis" class="nav-link {% if aktiv == 'sis' %}aktiv{% endif %}">
+      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/>
+      </svg>
+      SIS
+    </a>
+    <a href="/intensivkurve" class="nav-link {% if aktiv == 'intensivkurve' %}aktiv{% endif %}">
+      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+      </svg>
+      Intensivkurve
+    </a>
+    <a href="/leistungsnachweis" class="nav-link {% if aktiv == 'leistungsnachweis' %}aktiv{% endif %}">
+      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+      </svg>
+      Leistungsnachweis
+    </a>
+    <a href="/ereignisse" class="nav-link {% if aktiv == 'ereignisse' %}aktiv{% endif %}">
+      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+      </svg>
+      Ereignisse
+    </a>
+    <a href="/wunden" class="nav-link {% if aktiv == 'wunden' %}aktiv{% endif %}">
+      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+      </svg>
+      Wunddokumentation
+    </a>
+
+    <div class="nav-section-label" style="margin-top:8px;">Therapien</div>
+    <a href="/therapien" class="nav-link {% if aktiv == 'therapien' %}aktiv{% endif %}">
+      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+      </svg>
+      Therapien
+    </a>
+    <a href="/protokolle" class="nav-link {% if aktiv == 'protokolle' %}aktiv{% endif %}">
+      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/>
+      </svg>
+      Protokolle &amp; Dokumente
+    </a>
+
+    <div class="nav-section-label" style="margin-top:8px;">Verordnungen</div>
+    <a href="/beatmungsverordnung" class="nav-link {% if aktiv == 'beatmungsverordnung' %}aktiv{% endif %}">
+      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+      </svg>
+      Beatmungsverordnung
+    </a>
+    <a href="/medikamentenplan" class="nav-link {% if aktiv == 'medikamentenplan' %}aktiv{% endif %}">
+      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/>
+      </svg>
+      Medikamentenplan
+    </a>
+
+    <div class="nav-section-label" style="margin-top:8px;">System</div>
+    <a href="/admin" class="nav-link {% if aktiv == 'admin' %}aktiv{% endif %}">
+      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+      </svg>
+      Administration
+    </a>
+  </div>
+
+  <div class="nav-demo-badge">⚠ DEMO — Keine Echtdaten</div>
+
+  <div style="padding:12px 16px;border-top:1px solid rgba(255,255,255,0.08);margin-top:auto">
+    <div style="font-size:10px;color:#8A9BB0;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Entwickelt von</div>
+    <div style="font-size:13px;color:#ffffff;font-weight:500">Aaron Quazi</div>
+    <div style="font-size:11px;color:#8A9BB0;margin-top:2px">Pflegefachmann &amp; Healthcare IT</div>
+  </div>
+</nav>
+
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-left">
+      <div>
+        <div class="page-title">{% block page_title %}{% endblock %}</div>
+        <div class="page-subtitle">{% block page_subtitle %}{% endblock %}</div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <!-- Patient Switcher -->
+      <div class="patient-switcher" id="patientSwitcher">
+        <button class="patient-btn" onclick="togglePatientDropdown()" type="button">
+          <span style="font-size:15px">👤</span>
+          <div style="text-align:left;flex:1;min-width:0">
+            <div style="font-weight:500;font-size:13px">{{ nav_patient.name }}</div>
+            <div style="font-size:11px;color:var(--ink-3)">{{ nav_patient.zimmer }}{% if nav_patient.diagnose %} · {{ nav_patient.diagnose[:30] }}{% if nav_patient.diagnose|length > 30 %}…{% endif %}{% endif %}</div>
+          </div>
+          <svg width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-left:2px;opacity:0.45;flex-shrink:0"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
+        </button>
+        <div class="patient-dropdown" id="patientDropdown">
+          <div class="patient-dropdown-header">Patient wechseln</div>
+          <div id="patient-dropdown-list">
+            {% for p in all_patienten %}
+            <a href="/switch_patient/{{ p.id }}" class="patient-dropdown-item {% if p.id == current_patient_id %}active{% endif %}">
+              <div class="patient-dot {% if p.id == current_patient_id %}patient-dot-active{% else %}patient-dot-inactive{% endif %}"></div>
+              <div>
+                <div style="font-size:13px;font-weight:{% if p.id == current_patient_id %}600{% else %}400{% endif %}">{{ p.name }}</div>
+                <div style="font-size:11px;color:var(--ink-3);margin-top:1px">{{ p.zimmer }} · {{ p.station }}</div>
+                <div style="font-size:11px;color:var(--ink-3)">{{ p.id }} · {{ p.diagnose_kurz }}</div>
+              </div>
+            </a>
+            {% endfor %}
+          </div>
+          <div class="patient-dropdown-footer">
+            <a href="/admin">+ Neuen Patienten anlegen →</a>
+          </div>
+        </div>
+      </div>
+      <div class="time-display" id="clock">--:--</div>
+    </div>
+  </div>
+
+  <div class="content">
+    {% block content %}{% endblock %}
+  </div>
+</div>
+
+<script>
+  function updateClock() {
+    const now = new Date();
+    const t = now.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const d = now.toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' });
+    document.getElementById('clock').textContent = d + ' · ' + t;
+  }
+  updateClock();
+  setInterval(updateClock, 1000);
+
+  const _currentPid = '{{ current_patient_id }}';
+
+  function _escHtml(s) {
+    return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  async function refreshPatientDropdown() {
+    try {
+      const r = await fetch('/api/config/patienten');
+      const patienten = await r.json();
+      const list = document.getElementById('patient-dropdown-list');
+      list.innerHTML = patienten.map(p => {
+        const isActive = p.id === _currentPid;
+        const diag = (p.diagnose || '').substring(0, 30) + ((p.diagnose || '').length > 30 ? '…' : '');
+        return `<a href="/switch_patient/${_escHtml(p.id)}" class="patient-dropdown-item${isActive ? ' active' : ''}">
+          <div class="patient-dot ${isActive ? 'patient-dot-active' : 'patient-dot-inactive'}"></div>
+          <div>
+            <div style="font-size:13px;font-weight:${isActive ? '600' : '400'}">${_escHtml(p.name)}</div>
+            <div style="font-size:11px;color:var(--ink-3);margin-top:1px">${_escHtml(p.zimmer)} · ${_escHtml(p.station||'')}</div>
+            <div style="font-size:11px;color:var(--ink-3)">${_escHtml(p.id)} · ${_escHtml(diag)}</div>
+          </div>
+        </a>`;
+      }).join('');
+    } catch(e) {}
+  }
+
+  function togglePatientDropdown() {
+    const dd = document.getElementById('patientDropdown');
+    dd.classList.toggle('open');
+    if (dd.classList.contains('open')) refreshPatientDropdown();
+  }
+
+  document.addEventListener('click', function(e) {
+    const switcher = document.getElementById('patientSwitcher');
+    if (switcher && !switcher.contains(e.target)) {
+      document.getElementById('patientDropdown').classList.remove('open');
+    }
+  });
+</script>
+
+{% block scripts %}{% endblock %}
+</body>
+</html>

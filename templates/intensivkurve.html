@@ -1,0 +1,946 @@
+{% extends "base.html" %}
+{% block title %}Intensivkurve{% endblock %}
+{% block page_title %}Intensivkurve{% endblock %}
+{% block page_subtitle %}{{ patient.name }} · {{ heute }}{% endblock %}
+
+{% block content %}
+<style>
+  /* ── PRINT ── */
+  @media print {
+    .nav, .topbar, .tab-bar, .btn-save, #doku-assistent, #tab-verlauf { display:none !important }
+    .main { margin-left:0 !important }
+    body { background:#fff }
+    .kurve-outer { max-height:none;overflow:visible;border:1px solid #ccc }
+    .kurve-table { font-size:9px }
+    .kurve-cell input { font-size:9px }
+    .kurve-cell.pflicht-rot { background:#ffe0e0 !important;-webkit-print-color-adjust:exact;print-color-adjust:exact }
+    .kurve-cell.spo2-alert  { background:#ffd0d0 !important;-webkit-print-color-adjust:exact;print-color-adjust:exact }
+    .kurve-cell.spo2-warn   { background:#fff3c0 !important;-webkit-print-color-adjust:exact;print-color-adjust:exact }
+    .col-label { min-width:120px;max-width:120px;width:120px }
+    .th-time, .kurve-cell { min-width:38px;width:38px }
+    #print-kurve-header { display:block !important }
+    @page { size:A4 landscape;margin:12mm }
+  }
+  /* ── TABS ── */
+  .tab-bar {
+    display: flex;
+    gap: 2px;
+    margin-bottom: 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 4px;
+    width: fit-content;
+    box-shadow: var(--shadow);
+  }
+  .tab-btn {
+    padding: 6px 18px;
+    font-size: 12px;
+    font-weight: 500;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    background: transparent;
+    color: var(--ink-3);
+    font-family: var(--sans);
+    transition: all 0.15s;
+  }
+  .tab-btn:hover { color: var(--ink); background: var(--surface-2); }
+  .tab-btn.active { background: var(--blue); color: #fff; }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* ── TABLE ── */
+  .kurve-outer {
+    overflow: auto;
+    max-height: calc(100vh - 220px);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    box-shadow: var(--shadow);
+  }
+  .kurve-table {
+    border-collapse: collapse;
+    font-size: 11px;
+    white-space: nowrap;
+  }
+  .kurve-table th, .kurve-table td {
+    border: 1px solid var(--border-soft);
+  }
+  .kurve-table thead tr th {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+  }
+  .col-label {
+    position: sticky;
+    left: 0;
+    z-index: 15;
+    min-width: 160px;
+    max-width: 160px;
+    width: 160px;
+    padding: 4px 8px;
+    background: var(--surface);
+    color: var(--ink-2);
+    font-size: 11px;
+    border-right: 2px solid var(--border) !important;
+  }
+  thead .col-label {
+    z-index: 25;
+    background: var(--surface-2);
+  }
+  .th-time {
+    text-align: center;
+    padding: 5px 2px;
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--ink-3);
+    min-width: 52px;
+    width: 52px;
+  }
+  .th-frueh { background: #eef4ff; }
+  .th-spaet { background: #f7f8fa; }
+  .th-nacht { background: #eef2ff; }
+
+  /* group header rows */
+  .group-hd td {
+    padding: 3px 8px 3px 10px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.9px;
+    border-bottom: 1px solid var(--border) !important;
+  }
+  .group-hd .col-label { border-right: 2px solid var(--border) !important; }
+
+  .g-vital  { background: #dbeafe; color: #1e40af; }
+  .g-beat   { background: #ffedd5; color: #9a3412; }
+  .g-abs    { background: #dcfce7; color: #166534; }
+  .g-tk     { background: #ede9fe; color: #5b21b6; }
+  .g-bilanz { background: #fef9c3; color: #713f12; }
+  .g-lager  { background: #fce7f3; color: #9d174d; }
+  .g-pflege { background: #f3f4f6; color: #374151; }
+  .g-wund   { background: #fdf4e7; color: #92400e; }
+
+  /* data cells */
+  .kurve-cell {
+    padding: 0;
+    text-align: center;
+    min-width: 52px;
+    width: 52px;
+  }
+  .kurve-cell.s-frueh { background: #ffffff; }
+  .kurve-cell.s-spaet { background: #fafafa; }
+  .kurve-cell.s-nacht { background: #f4f6ff; }
+  .kurve-cell input {
+    width: 100%;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-family: var(--mono);
+    font-size: 11px;
+    text-align: center;
+    padding: 4px 2px;
+    color: var(--ink);
+    cursor: text;
+  }
+  .kurve-cell input::placeholder { color: transparent; }
+  .kurve-cell:hover input::placeholder { color: #d0d5de; }
+  .kurve-cell input:focus { background: var(--blue-light); color: var(--blue); font-weight: 600; }
+  .kurve-cell.filled    { background: rgba(26,86,219,0.06) !important; }
+  .kurve-cell.spo2-warn  { background: #fef3c7 !important; }
+  .kurve-cell.spo2-alert { background: #fee2e2 !important; }
+  .kurve-cell.overdue      { background: rgba(180,83,9,0.09) !important; }
+  .kurve-cell.pflicht-rot  { background: #FEE2E2 !important; border: 1px solid #FCA5A5 !important; }
+  .kurve-cell.pflicht-rot input::placeholder { color: #FCA5A5; }
+  .kurve-table tbody tr:not(.group-hd):hover .kurve-cell:not([class*=spo2]):not(.overdue):not(.pflicht-rot) {
+    filter: brightness(0.97);
+  }
+
+  /* toolbar */
+  .kurve-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .legend-dot {
+    display: inline-block;
+    width: 11px; height: 11px;
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    vertical-align: middle;
+    margin-right: 3px;
+  }
+  .btn-save {
+    background: var(--blue);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius);
+    padding: 7px 18px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: var(--sans);
+    transition: background 0.15s;
+  }
+  .btn-save:hover { background: var(--blue-mid); }
+  .btn-save:disabled { opacity: 0.6; cursor: not-allowed; }
+
+  /* charts */
+  .chart-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+  .chart-full { grid-column: 1 / -1; }
+  .chart-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 14px 16px;
+  }
+  .chart-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ink);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .chart-subtitle { font-size: 11px; color: var(--ink-3); font-weight: 400; }
+  canvas { display: block; }
+</style>
+
+<!-- Tab bar -->
+<div class="tab-bar">
+  <button class="tab-btn active" onclick="switchTab('kurve', this)">📋 Kurve</button>
+  <button class="tab-btn" onclick="switchTab('verlauf', this)">📈 Verlauf</button>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     TAB 1 — KURVE
+     ══════════════════════════════════════════════════════════ -->
+<div id="tab-kurve" class="tab-panel active">
+
+  <!-- Druckheader -->
+  <div id="print-kurve-header" style="display:none;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid #0F1923">
+    <div style="font-size:15px;font-weight:700">CareBridge — Intensivkurve</div>
+    <div style="font-size:11px;color:#4A5568;margin-top:2px">{{ patient.name }} · {{ heute }} · Nur für interne Verwendung</div>
+    <div style="font-size:10px;color:#8A9BB0;margin-top:1px">Erstellt von Aaron Quazi · CareBridge Demo · Kein Medizinprodukt</div>
+  </div>
+
+  <div class="kurve-toolbar">
+    <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+      <span class="badge badge-blue" style="font-family:var(--mono)">{{ heute }}</span>
+      <span style="font-size:11px;color:var(--ink-3)">
+        <span class="legend-dot" style="background:#eef4ff"></span>Früh 07–13
+        <span class="legend-dot" style="background:#fafafa;margin-left:8px"></span>Spät 14–21
+        <span class="legend-dot" style="background:#f4f6ff;margin-left:8px"></span>Nacht 22+
+      </span>
+      <span style="font-size:11px;color:var(--ink-3)">
+        <span class="legend-dot" style="background:#fef3c7"></span>SpO₂ &lt;92%
+        <span class="legend-dot" style="background:#fee2e2;margin-left:6px"></span>SpO₂ &lt;90%
+        <span class="legend-dot" style="background:rgba(180,83,9,0.09);margin-left:6px"></span>Überfällig
+        <span class="legend-dot" style="background:#FEE2E2;border-color:#FCA5A5;margin-left:6px"></span>Pflichtfeld fehlt
+      </span>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <span id="save-status" style="font-size:11px;color:var(--ink-3)"></span>
+      <button class="btn-save" onclick="saveKurve()">Speichern</button>
+      <button class="btn-save" style="background:var(--ink-2)" onclick="window.print()">🖨 Drucken</button>
+    </div>
+  </div>
+
+  <div class="kurve-outer">
+    <table class="kurve-table" id="kurveTable">
+      <thead>
+        <tr>
+          <th class="col-label" style="font-size:10px;text-transform:uppercase;letter-spacing:0.8px;color:var(--ink-3);font-weight:500;padding:6px 8px">Parameter</th>
+          {% for h in stunden %}
+          <th class="th-time {% if h < 14 %}th-frueh{% elif h < 22 %}th-spaet{% else %}th-nacht{% endif %}">
+            {{ '%02d'|format(h) }}:00
+          </th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+
+        {# ── GRUPPE 1: Vitalparameter ── #}
+        <tr class="group-hd">
+          <td class="col-label g-vital">① Vitalparameter</td>
+          {% for h in stunden %}<td class="g-vital" style="border-top:none"></td>{% endfor %}
+        </tr>
+        {% set vital_rows = [
+          ('bd_sys','BD systolisch','mmHg','vital'),
+          ('bd_dia','BD diastolisch','mmHg','vital'),
+          ('hf','Herzfrequenz','/min','vital'),
+          ('spo2','SpO₂','%','spo2'),
+          ('af','Atemfrequenz','/min','vital'),
+          ('temp','Temperatur','°C','vital'),
+        ] %}
+        {% for key,label,unit,typ in vital_rows %}
+        <tr>
+          <td class="col-label"><span style="font-weight:500">{{ label }}</span><span style="color:var(--ink-3);font-size:10px;margin-left:4px">{{ unit }}</span></td>
+          {% for h in stunden %}
+          {% set sc='s-frueh' if h<14 else ('s-spaet' if h<22 else 's-nacht') %}
+          <td class="kurve-cell {{ sc }}" id="td-{{ key }}-{{ h }}"><input type="text" id="cell-{{ key }}-{{ h }}" data-key="{{ key }}" data-hour="{{ h }}" data-type="{{ typ }}" placeholder="—" autocomplete="off" oninput="onInput(this)"></td>
+          {% endfor %}
+        </tr>
+        {% endfor %}
+
+        {# ── GRUPPE 2: Beatmung ── #}
+        <tr class="group-hd">
+          <td class="col-label g-beat">② Beatmung</td>
+          {% for h in stunden %}<td class="g-beat" style="border-top:none"></td>{% endfor %}
+        </tr>
+        {% set beat_rows = [
+          ('ie','I/E Verhältnis','','beat'),
+          ('ipap','IPAP','mbar','beat'),
+          ('epap','EPAP','mbar','beat'),
+          ('amv','Atemminutenvolumen','L/min','beat'),
+          ('vt','Tidalvolumen Vt','ml','beat'),
+          ('leckage','Leckage','L/min','beat'),
+          ('trigger','Trigger','','beat'),
+          ('modus','Modus','','beat'),
+        ] %}
+        {% for key,label,unit,typ in beat_rows %}
+        <tr>
+          <td class="col-label"><span style="font-weight:500">{{ label }}</span>{% if unit %}<span style="color:var(--ink-3);font-size:10px;margin-left:4px">{{ unit }}</span>{% endif %}</td>
+          {% for h in stunden %}
+          {% set sc='s-frueh' if h<14 else ('s-spaet' if h<22 else 's-nacht') %}
+          <td class="kurve-cell {{ sc }}" id="td-{{ key }}-{{ h }}"><input type="text" id="cell-{{ key }}-{{ h }}" data-key="{{ key }}" data-hour="{{ h }}" data-type="{{ typ }}" placeholder="—" autocomplete="off" oninput="onInput(this)"></td>
+          {% endfor %}
+        </tr>
+        {% endfor %}
+
+        {# ── GRUPPE 3: Absaugung ── #}
+        <tr class="group-hd">
+          <td class="col-label g-abs">③ Absaugung</td>
+          {% for h in stunden %}<td class="g-abs" style="border-top:none"></td>{% endfor %}
+        </tr>
+        {% set abs_rows = [
+          ('abs_sekret','Sekret (k/w/g/gr/b)','','abs'),
+          ('cough_assist','Cough Assist','ja/nein','abs'),
+        ] %}
+        {% for key,label,unit,typ in abs_rows %}
+        <tr>
+          <td class="col-label"><span style="font-weight:500">{{ label }}</span>{% if unit %}<span style="color:var(--ink-3);font-size:10px;margin-left:4px">{{ unit }}</span>{% endif %}</td>
+          {% for h in stunden %}
+          {% set sc='s-frueh' if h<14 else ('s-spaet' if h<22 else 's-nacht') %}
+          <td class="kurve-cell {{ sc }}" id="td-{{ key }}-{{ h }}"><input type="text" id="cell-{{ key }}-{{ h }}" data-key="{{ key }}" data-hour="{{ h }}" data-type="{{ typ }}" placeholder="—" autocomplete="off" oninput="onInput(this)"></td>
+          {% endfor %}
+        </tr>
+        {% endfor %}
+
+        {# ── GRUPPE 4: Inhalation / TK ── #}
+        <tr class="group-hd">
+          <td class="col-label g-tk">④ Inhalation / Trachealkanüle</td>
+          {% for h in stunden %}<td class="g-tk" style="border-top:none"></td>{% endfor %}
+        </tr>
+        {% set tk_rows = [
+          ('inhalation','Inhalation','✓','tk'),
+          ('cuffdruck','Cuffdruck','cmH₂O','tk'),
+          ('tk_pflege','TK-Pflege','✓','tk'),
+        ] %}
+        {% for key,label,unit,typ in tk_rows %}
+        <tr>
+          <td class="col-label"><span style="font-weight:500">{{ label }}</span>{% if unit %}<span style="color:var(--ink-3);font-size:10px;margin-left:4px">{{ unit }}</span>{% endif %}</td>
+          {% for h in stunden %}
+          {% set sc='s-frueh' if h<14 else ('s-spaet' if h<22 else 's-nacht') %}
+          <td class="kurve-cell {{ sc }}" id="td-{{ key }}-{{ h }}"><input type="text" id="cell-{{ key }}-{{ h }}" data-key="{{ key }}" data-hour="{{ h }}" data-type="{{ typ }}" placeholder="—" autocomplete="off" oninput="onInput(this)"></td>
+          {% endfor %}
+        </tr>
+        {% endfor %}
+
+        {# ── GRUPPE 5: Einfuhr / Ausfuhr / Bilanz ── #}
+        <tr class="group-hd">
+          <td class="col-label g-bilanz">⑤ Einfuhr / Ausfuhr / Bilanz</td>
+          {% for h in stunden %}<td class="g-bilanz" style="border-top:none"></td>{% endfor %}
+        </tr>
+        {% set bilanz_rows = [
+          ('h2o_tee','H₂O / Tee','ml/h','bilanz'),
+          ('orale_zufuhr','Orale Zufuhr','ml','bilanz'),
+          ('ernaehrung_oral','Ernährung oral','ml','bilanz'),
+          ('trinkfluessigkeit','Trinkflüssigkeit','ml','bilanz'),
+          ('einfuhr_gesamt','Einfuhr gesamt','ml','bilanz'),
+          ('ausfuhr_6_18','Ausfuhr 06–18 Uhr','ml','bilanz'),
+          ('ausfuhr_24h','Bilanz 24h','ml','bilanz'),
+          ('blasenmgmt','Blasenmanagement','Kürzel','bilanz'),
+        ] %}
+        {% for key,label,unit,typ in bilanz_rows %}
+        <tr>
+          <td class="col-label"><span style="font-weight:500">{{ label }}</span>{% if unit %}<span style="color:var(--ink-3);font-size:10px;margin-left:4px">{{ unit }}</span>{% endif %}</td>
+          {% for h in stunden %}
+          {% set sc='s-frueh' if h<14 else ('s-spaet' if h<22 else 's-nacht') %}
+          <td class="kurve-cell {{ sc }}" id="td-{{ key }}-{{ h }}"><input type="text" id="cell-{{ key }}-{{ h }}" data-key="{{ key }}" data-hour="{{ h }}" data-type="{{ typ }}" placeholder="—" autocomplete="off" oninput="onInput(this)"></td>
+          {% endfor %}
+        </tr>
+        {% endfor %}
+
+        {# ── GRUPPE 6: Lagerung / Mobilisation ── #}
+        <tr class="group-hd">
+          <td class="col-label g-lager">⑥ Lagerung / Mobilisation</td>
+          {% for h in stunden %}<td class="g-lager" style="border-top:none"></td>{% endfor %}
+        </tr>
+        {% set lager_rows = [
+          ('lagerung','Lagerung','30/90/120°/ML','lager'),
+          ('rueckenlagerung','Rückenlagerung','re/li','lager'),
+          ('mobilisation','BKS / RSP / WC-Stuhl','Kürzel','lager'),
+          ('transfer','Transfer','Lift/Steh/KIN','lager'),
+        ] %}
+        {% for key,label,unit,typ in lager_rows %}
+        <tr>
+          <td class="col-label"><span style="font-weight:500">{{ label }}</span>{% if unit %}<span style="color:var(--ink-3);font-size:10px;margin-left:4px">{{ unit }}</span>{% endif %}</td>
+          {% for h in stunden %}
+          {% set sc='s-frueh' if h<14 else ('s-spaet' if h<22 else 's-nacht') %}
+          <td class="kurve-cell {{ sc }}" id="td-{{ key }}-{{ h }}"><input type="text" id="cell-{{ key }}-{{ h }}" data-key="{{ key }}" data-hour="{{ h }}" data-type="{{ typ }}" placeholder="—" autocomplete="off" oninput="onInput(this)"></td>
+          {% endfor %}
+        </tr>
+        {% endfor %}
+
+        {# ── GRUPPE 7: Grundpflege / Prophylaxen ── #}
+        <tr class="group-hd">
+          <td class="col-label g-pflege">⑦ Grundpflege / Prophylaxen</td>
+          {% for h in stunden %}<td class="g-pflege" style="border-top:none"></td>{% endfor %}
+        </tr>
+        {% set pflege_rows = [
+          ('grundpflege','Grundpflege','✓','pflege'),
+          ('mundpflege','Mundpflege','✓','pflege'),
+          ('soor_parotis','Soor & Parotisprophylaxe','✓','pflege'),
+          ('intertrigo','Intertrigo-Prophylaxe','✓','pflege'),
+          ('pneumonie_p','Pneumonieprophylaxe','✓','pflege'),
+          ('dekubitus_p','Dekubitusprophylaxe','✓','pflege'),
+          ('thrombose_p','Thromboseprophylaxe','✓','pflege'),
+          ('kontraktur_p','Kontrakturprophylaxe','✓','pflege'),
+          ('ok_hoch','OK-Hochlagerung','✓','pflege'),
+        ] %}
+        {% for key,label,unit,typ in pflege_rows %}
+        <tr>
+          <td class="col-label"><span style="font-weight:500">{{ label }}</span>{% if unit %}<span style="color:var(--ink-3);font-size:10px;margin-left:4px">{{ unit }}</span>{% endif %}</td>
+          {% for h in stunden %}
+          {% set sc='s-frueh' if h<14 else ('s-spaet' if h<22 else 's-nacht') %}
+          <td class="kurve-cell {{ sc }}" id="td-{{ key }}-{{ h }}"><input type="text" id="cell-{{ key }}-{{ h }}" data-key="{{ key }}" data-hour="{{ h }}" data-type="{{ typ }}" placeholder="—" autocomplete="off" oninput="onInput(this)"></td>
+          {% endfor %}
+        </tr>
+        {% endfor %}
+
+        {# ── GRUPPE 8: Wundversorgung / Sonstiges ── #}
+        <tr class="group-hd">
+          <td class="col-label g-wund">⑧ Wundversorgung / Sonstiges</td>
+          {% for h in stunden %}<td class="g-wund" style="border-top:none"></td>{% endfor %}
+        </tr>
+        {% set wund_rows = [
+          ('wundversorgung','Wundversorgung','✓/Text','wund'),
+          ('stomapflege','Stomapflege','✓','wund'),
+          ('med_plan','Medikamente lt. Plan','✓','wund'),
+        ] %}
+        {% for key,label,unit,typ in wund_rows %}
+        <tr>
+          <td class="col-label"><span style="font-weight:500">{{ label }}</span>{% if unit %}<span style="color:var(--ink-3);font-size:10px;margin-left:4px">{{ unit }}</span>{% endif %}</td>
+          {% for h in stunden %}
+          {% set sc='s-frueh' if h<14 else ('s-spaet' if h<22 else 's-nacht') %}
+          <td class="kurve-cell {{ sc }}" id="td-{{ key }}-{{ h }}"><input type="text" id="cell-{{ key }}-{{ h }}" data-key="{{ key }}" data-hour="{{ h }}" data-type="{{ typ }}" placeholder="—" autocomplete="off" oninput="onInput(this)"></td>
+          {% endfor %}
+        </tr>
+        {% endfor %}
+
+      </tbody>
+    </table>
+  </div>
+
+    <div class="warn-banner mt-16">
+    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="flex-shrink:0"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+    <span><strong>Demo-Hinweis:</strong> Alle Werte fiktiv. Gespeichert als <code>data/kurve_{{ heute }}.json</code>.</span>
+  </div>
+
+  <!-- Dokumentationsassistent -->
+  <div id="doku-assistent" style="display:none;margin-top:12px;border-radius:var(--radius);overflow:hidden;border:1px solid var(--border);box-shadow:var(--shadow)">
+    <div id="doku-header" style="padding:8px 14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.7px;display:flex;align-items:center;justify-content:space-between">
+      <span>📝 Dokumentationsassistent — Textbaustein</span>
+      <button onclick="copyDokuText()" style="background:transparent;border:1px solid currentColor;border-radius:4px;padding:2px 10px;font-size:11px;font-weight:600;cursor:pointer;font-family:var(--sans);opacity:0.85">Text kopieren</button>
+    </div>
+    <div id="doku-body" style="padding:12px 14px">
+      <div id="doku-text" style="font-size:12px;font-family:var(--mono);line-height:1.6;white-space:pre-wrap"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     TAB 2 — VERLAUF
+     ══════════════════════════════════════════════════════════ -->
+<div id="tab-verlauf" class="tab-panel">
+
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+    <span style="font-size:12px;color:var(--ink-3)">Daten aus Tab 1 · gestrichelt = Alarmgrenze</span>
+    <span id="chart-data-hint" class="badge badge-gray" style="font-size:11px"></span>
+  </div>
+
+  <!-- Chart 1: SpO₂ + HF -->
+  <div class="chart-card chart-full mb-16">
+    <div class="chart-title">
+      SpO₂ &amp; Herzfrequenz — Tagesverlauf
+      <span class="chart-subtitle">SpO₂ Alarmgrenze: 88%</span>
+    </div>
+    <canvas id="chartSpoHf" height="70"></canvas>
+  </div>
+
+  <div class="chart-grid">
+    <!-- Chart 2: Blutdruck -->
+    <div class="chart-card">
+      <div class="chart-title">
+        Blutdruck
+        <span class="chart-subtitle">systolisch / diastolisch</span>
+      </div>
+      <canvas id="chartBD" height="110"></canvas>
+    </div>
+
+    <!-- Chart 3: Tidalvolumen + Leckage -->
+    <div class="chart-card">
+      <div class="chart-title">
+        Beatmung
+        <span class="chart-subtitle">Tidalvolumen · Leckage (Alarm &gt;40 L/min)</span>
+      </div>
+      <canvas id="chartBeat" height="110"></canvas>
+    </div>
+  </div>
+
+  <div class="warn-banner">
+    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="flex-shrink:0"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+    <span>Verlaufsansicht zeigt eingetragene Werte aus Tab 1. Wenn leer → Demo-Daten.</span>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+const HEUTE = {{ heute | tojson }};
+const STUNDEN = {{ stunden | tojson }};
+let kurveData = {};
+let dirty = false;
+let chartSpoHf = null, chartBD = null, chartBeat = null;
+
+// ── Tab switching ──────────────────────────────────────────
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  btn.classList.add('active');
+  if (name === 'verlauf') refreshCharts();
+}
+
+// ── Cell logic ─────────────────────────────────────────────
+function setCellValue(inp, val, silent) {
+  inp.value = val;
+  const td = document.getElementById('td-' + inp.dataset.key + '-' + inp.dataset.hour);
+  if (!td) return;
+  td.classList.remove('filled', 'spo2-warn', 'spo2-alert', 'overdue', 'pflicht-rot');
+  if (val && val.trim()) {
+    td.classList.add('filled');
+    if (inp.dataset.type === 'spo2') {
+      const n = parseFloat(val);
+      if (!isNaN(n)) {
+        if (n < 90) td.classList.add('spo2-alert');
+        else if (n < 92) td.classList.add('spo2-warn');
+      }
+    }
+  }
+  if (!silent) {
+    if (!kurveData[inp.dataset.key]) kurveData[inp.dataset.key] = {};
+    kurveData[inp.dataset.key][inp.dataset.hour] = val.trim();
+    markDirty();
+  }
+}
+
+function onInput(inp) {
+  setCellValue(inp, inp.value, false);
+  if (['spo2','hf','bd_sys','af','temp'].includes(inp.dataset.key)) {
+    updateDokuAssistent();
+  }
+  if (PFLICHT_PARAMS.includes(inp.dataset.key)) {
+    updateRowStatus(inp.dataset.key);
+  }
+}
+
+// ── Dokumentationsassistent ────────────────────────────────
+function getLatestValue(key) {
+  const group = kurveData[key] || {};
+  let best = null, bestH = -1;
+  for (const h in group) {
+    const v = group[h];
+    if (v && v.trim() && parseInt(h) > bestH) {
+      bestH = parseInt(h);
+      best = v.trim();
+    }
+  }
+  return best;
+}
+
+function updateDokuAssistent() {
+  const spo2Raw = getLatestValue('spo2');
+  const hfRaw   = getLatestValue('hf');
+  const spo2    = spo2Raw !== null ? parseFloat(spo2Raw) : null;
+  const hf      = hfRaw   !== null ? parseFloat(hfRaw)   : null;
+
+  const el   = document.getElementById('doku-assistent');
+  const hdr  = document.getElementById('doku-header');
+  const body = document.getElementById('doku-body');
+  const txt  = document.getElementById('doku-text');
+
+  if (spo2 === null && hf === null) { el.style.display = 'none'; return; }
+
+  let text, color, bg, border;
+
+  if (spo2 !== null && spo2 < 88) {
+    text   = `ACHTUNG: SpO₂ unter Alarmgrenze (${spo2}%).\nSofortmaßnahmen einleiten. Arzt umgehend informieren.\nBeatmungseinstellung überprüfen, Atemwege freimachen.`;
+    color  = '#C0392B'; bg = '#fff5f5'; border = '#FCA5A5';
+  } else if (spo2 !== null && spo2 < 92) {
+    const hfStr = hf !== null ? `, HF ${hf}/min` : '';
+    text   = `Vitalwerte kontrolliert. SpO₂ erniedrigt (${spo2}%${hfStr}).\nÄrztliche Rücksprache empfohlen. Beatmungseinstellung prüfen.\nEngmaschige Überwachung angeordnet.`;
+    color  = '#92400e'; bg = '#fffbeb'; border = '#FCD34D';
+  } else {
+    const parts = [];
+    if (spo2 !== null) parts.push(`SpO₂ ${spo2}%`);
+    if (hf   !== null) parts.push(`HF ${hf}/min`);
+    const vals = parts.join(', ');
+    text   = `Vitalzeichenkontrolle durchgeführt. Patient kardiorespiratorisch stabil.\nBeatmung regelgerecht.${vals ? ' ' + vals + '.' : ''} Keine Auffälligkeiten.`;
+    color  = '#0D7A5C'; bg = '#f0fdf8'; border = '#6EE7B7';
+  }
+
+  hdr.style.background    = bg;
+  hdr.style.color         = color;
+  hdr.style.borderBottom  = `1px solid ${border}`;
+  el.style.border         = `1px solid ${border}`;
+  txt.textContent         = text;
+  el.style.display        = 'block';
+}
+
+function copyDokuText() {
+  const text = document.getElementById('doku-text').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.querySelector('#doku-header button');
+    const orig = btn.textContent;
+    btn.textContent = '✓ Kopiert!';
+    setTimeout(() => { btn.textContent = orig; }, 2000);
+  }).catch(() => {
+    const range = document.createRange();
+    range.selectNode(document.getElementById('doku-text'));
+    window.getSelection().removeAllRanges();
+    window.getSelection().addRange(range);
+  });
+}
+
+function markDirty() {
+  dirty = true;
+  const el = document.getElementById('save-status');
+  el.textContent = '● Nicht gespeichert';
+  el.style.color = 'var(--amber)';
+}
+
+// ── Load / Save ────────────────────────────────────────────
+async function loadKurve() {
+  try {
+    const r = await fetch('/api/kurve/load?datum=' + HEUTE);
+    if (!r.ok) return;
+    const data = await r.json();
+    kurveData = data;
+    for (const key in data) {
+      for (const hour in data[key]) {
+        const val = data[key][hour];
+        if (!val) continue;
+        const inp = document.getElementById('cell-' + key + '-' + hour);
+        if (inp) setCellValue(inp, val, true);
+      }
+    }
+    if (Object.keys(data).length > 0) {
+      const el = document.getElementById('save-status');
+      el.textContent = '✓ Geladen';
+      el.style.color = 'var(--green)';
+    }
+  } catch(e) {}
+}
+
+async function saveKurve() {
+  const btn = document.querySelector('.btn-save');
+  btn.disabled = true;
+  btn.textContent = '…';
+  try {
+    const r = await fetch('/api/kurve/save', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ datum: HEUTE, data: kurveData })
+    });
+    const el = document.getElementById('save-status');
+    if (r.ok) {
+      dirty = false;
+      const t = new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+      el.textContent = '✓ Gespeichert ' + t;
+      el.style.color = 'var(--green)';
+    } else {
+      el.textContent = '✗ Fehler';
+      el.style.color = 'var(--red)';
+    }
+  } catch(e) {
+    document.getElementById('save-status').textContent = '✗ ' + e.message;
+    document.getElementById('save-status').style.color = 'var(--red)';
+  }
+  btn.disabled = false;
+  btn.textContent = 'Speichern';
+}
+
+// ── Pflichtfeld-Rot: Intervall-basierte Logik ─────────────
+const PFLICHT_PARAMS = ['spo2','hf','bd_sys','bd_dia','af','ipap','epap','vt','leckage','lagerung'];
+let paramIntervalle  = { spo2:2, hf:2, bd_sys:2, bd_dia:2, af:2, ipap:2, epap:2, vt:2, leckage:2, lagerung:2 };
+
+async function loadIntervalle() {
+  try {
+    const r = await fetch('/api/config/patient/P-2024-0042/intervalle');
+    if (r.ok) {
+      const d = await r.json();
+      if (d.spo2)     paramIntervalle.spo2     = d.spo2;
+      if (d.hf)       paramIntervalle.hf       = d.hf;
+      if (d.bd_sys)   paramIntervalle.bd_sys   = d.bd_sys;
+      if (d.bd_dia)   paramIntervalle.bd_dia   = d.bd_dia;
+      if (d.af)       paramIntervalle.af       = d.af;
+      if (d.beatmung) { paramIntervalle.ipap = d.beatmung; paramIntervalle.epap = d.beatmung; }
+      if (d.vt)       paramIntervalle.vt       = d.vt;
+      if (d.leckage)  paramIntervalle.leckage  = d.leckage;
+      if (d.lagerung) paramIntervalle.lagerung = d.lagerung;
+    }
+  } catch(e) {}
+}
+
+function updateRowStatus(key) {
+  if (!PFLICHT_PARAMS.includes(key)) return;
+  const interval = paramIntervalle[key] || 2;
+  const cur      = new Date().getHours();
+  const group    = kurveData[key] || {};
+
+  // find last documented hour
+  let lastDoc = -1;
+  for (let h = 7; h <= 22; h++) {
+    if ((group[String(h)] || '').trim()) lastDoc = h;
+  }
+
+  for (let h = 7; h <= 22; h++) {
+    const td = document.getElementById('td-' + key + '-' + h);
+    if (!td) continue;
+    const hasVal = (group[String(h)] || '').trim() !== '';
+
+    if (hasVal) {
+      td.classList.remove('pflicht-rot', 'overdue');
+    } else if (h <= cur) {
+      // past/current hour, no value
+      const deadline = lastDoc + interval;
+      if (lastDoc < 0 || h > deadline) {
+        td.classList.remove('overdue');
+        if (!td.classList.contains('spo2-warn') && !td.classList.contains('spo2-alert')) {
+          td.classList.add('pflicht-rot');
+          const inp = td.querySelector('input');
+          if (inp) {
+            const lastStr = lastDoc >= 0 ? ('0'+lastDoc).slice(-2)+':00 Uhr' : 'noch kein Eintrag';
+            inp.title = 'Dokumentation überfällig — letzter Eintrag: ' + lastStr;
+          }
+        }
+      } else {
+        td.classList.remove('pflicht-rot', 'overdue');
+      }
+    } else {
+      td.classList.remove('pflicht-rot', 'overdue');
+    }
+  }
+}
+
+function checkAllCells() {
+  PFLICHT_PARAMS.forEach(key => updateRowStatus(key));
+}
+
+// ── Chart helpers ──────────────────────────────────────────
+const DEMO = {
+  spo2:   [96,95,97,94,96,97,96,95,97,96,95,96,97,96,95,96],
+  hf:     [72,74,70,76,73,71,72,74,70,73,72,74,70,76,73,71],
+  bd_sys: [118,122,115,124,120,118,116,120,118,122,119,118,116,120,118,121],
+  bd_dia: [76,78,74,80,76,75,74,76,75,78,76,76,74,77,76,77],
+  vt:     [600,595,610,585,602,608,600,595,608,600,602,605,598,600,604,600],
+  leckage:[8,10,7,12,9,8,9,10,7,9,8,9,7,10,8,9]
+};
+
+function extractSeries(key) {
+  const group = kurveData[key] || {};
+  return STUNDEN.map(h => {
+    const v = parseFloat(group[String(h)]);
+    return isNaN(v) ? null : v;
+  });
+}
+
+function hasAnyValues(keys) {
+  return keys.some(k => {
+    const g = kurveData[k] || {};
+    return Object.values(g).some(v => v && v.trim() !== '');
+  });
+}
+
+function alarmLine(value, color) {
+  return {
+    type: 'line',
+    data: STUNDEN.map(() => value),
+    borderColor: color,
+    borderWidth: 1.5,
+    borderDash: [5, 4],
+    pointRadius: 0,
+    label: 'Alarmgrenze',
+    fill: false,
+  };
+}
+
+const CHART_OPTS = {
+  responsive: true,
+  maintainAspectRatio: true,
+  interaction: { mode: 'index', intersect: false },
+  plugins: {
+    legend: { labels: { font: { family: 'IBM Plex Sans', size: 11 }, color: '#4A5568', boxWidth: 14, padding: 12 } },
+    tooltip: {
+      backgroundColor: '#0F1923',
+      titleFont: { family: 'IBM Plex Mono', size: 10 },
+      bodyFont:  { family: 'IBM Plex Mono', size: 11 },
+      filter: item => item.dataset.label !== 'Alarmgrenze'
+    }
+  },
+  scales: {
+    x: {
+      grid: { color: '#EAECF0' },
+      ticks: { font: { family: 'IBM Plex Mono', size: 10 }, color: '#8A9BB0' }
+    }
+  }
+};
+
+function makeYAxis(id, min, max, label, color, position) {
+  return {
+    id, min, max, position,
+    grid: position === 'left' ? { color: '#EAECF0' } : { drawOnChartArea: false },
+    title: { display: true, text: label, font: { size: 10 }, color },
+    ticks: { font: { family: 'IBM Plex Mono', size: 10 }, color: '#8A9BB0' }
+  };
+}
+
+function refreshCharts() {
+  const labels = STUNDEN.map(h => ('0'+h).slice(-2)+':00');
+  const useDemo = !hasAnyValues(['spo2','hf','bd_sys','bd_dia','vt','leckage']);
+
+  const hint = document.getElementById('chart-data-hint');
+  hint.textContent = useDemo ? '⚡ Demo-Daten' : '✓ Kurven-Daten';
+  hint.className = 'badge ' + (useDemo ? 'badge-amber' : 'badge-green');
+
+  const spo2   = useDemo ? DEMO.spo2   : extractSeries('spo2');
+  const hf     = useDemo ? DEMO.hf     : extractSeries('hf');
+  const bd_sys = useDemo ? DEMO.bd_sys : extractSeries('bd_sys');
+  const bd_dia = useDemo ? DEMO.bd_dia : extractSeries('bd_dia');
+  const vt     = useDemo ? DEMO.vt     : extractSeries('vt');
+  const leckage= useDemo ? DEMO.leckage: extractSeries('leckage');
+
+  // Chart 1: SpO₂ + HF
+  if (chartSpoHf) chartSpoHf.destroy();
+  chartSpoHf = new Chart(document.getElementById('chartSpoHf'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        { label: 'SpO₂ (%)', data: spo2, borderColor: '#1A56DB', backgroundColor: 'rgba(26,86,219,0.07)', borderWidth: 2, pointRadius: 4, tension: 0.3, fill: true, yAxisID: 'y', spanGaps: true },
+        { label: 'Herzfrequenz (/min)', data: hf, borderColor: '#0D7A5C', backgroundColor: 'transparent', borderWidth: 2, pointRadius: 4, tension: 0.3, borderDash: [4,3], yAxisID: 'y2', spanGaps: true },
+        { ...alarmLine(88, '#C0392B'), yAxisID: 'y', label: 'SpO₂ Alarm 88%' }
+      ]
+    },
+    options: {
+      ...CHART_OPTS,
+      scales: {
+        x: CHART_OPTS.scales.x,
+        y:  makeYAxis('y',  80, 100, 'SpO₂ (%)',        '#1A56DB', 'left'),
+        y2: makeYAxis('y2', 40, 120, 'Herzfrequenz (/min)', '#0D7A5C', 'right')
+      }
+    }
+  });
+
+  // Chart 2: BD
+  if (chartBD) chartBD.destroy();
+  chartBD = new Chart(document.getElementById('chartBD'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        { label: 'BD systolisch', data: bd_sys, borderColor: '#C0392B', backgroundColor: 'rgba(192,57,43,0.07)', borderWidth: 2, pointRadius: 3, tension: 0.3, fill: false, spanGaps: true },
+        { label: 'BD diastolisch', data: bd_dia, borderColor: '#E67E22', backgroundColor: 'transparent', borderWidth: 2, pointRadius: 3, tension: 0.3, borderDash: [4,3], fill: false, spanGaps: true }
+      ]
+    },
+    options: {
+      ...CHART_OPTS,
+      scales: {
+        x: CHART_OPTS.scales.x,
+        y: { min: 40, max: 200, grid: { color: '#EAECF0' }, ticks: { font: { family: 'IBM Plex Mono', size: 10 }, color: '#8A9BB0' }, title: { display: true, text: 'mmHg', font: { size: 10 }, color: '#8A9BB0' } }
+      }
+    }
+  });
+
+  // Chart 3: Vt + Leckage
+  if (chartBeat) chartBeat.destroy();
+  chartBeat = new Chart(document.getElementById('chartBeat'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        { label: 'Tidalvolumen (ml)', data: vt, borderColor: '#7C3AED', backgroundColor: 'rgba(124,58,237,0.07)', borderWidth: 2, pointRadius: 3, tension: 0.3, fill: true, yAxisID: 'y', spanGaps: true },
+        { label: 'Leckage (L/min)', data: leckage, borderColor: '#B45309', backgroundColor: 'transparent', borderWidth: 2, pointRadius: 3, tension: 0.3, yAxisID: 'y2', spanGaps: true },
+        { ...alarmLine(40, '#C0392B'), yAxisID: 'y2', label: 'Leckage Alarm 40' }
+      ]
+    },
+    options: {
+      ...CHART_OPTS,
+      scales: {
+        x: CHART_OPTS.scales.x,
+        y:  makeYAxis('y',  0, 900, 'Tidalvolumen (ml)', '#7C3AED', 'left'),
+        y2: makeYAxis('y2', 0, 60,  'Leckage (L/min)',   '#B45309', 'right')
+      }
+    }
+  });
+}
+
+// ── Zelle löschen per Doppelklick ─────────────────────────
+document.querySelectorAll('.kurve-cell input').forEach(inp => {
+  inp.addEventListener('dblclick', async function(e) {
+    if (!this.value.trim()) return;
+    const key  = this.dataset.key;
+    const hour = this.dataset.hour;
+    try {
+      const r = await fetch('/api/kurve/zelle-loeschen', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ datum: HEUTE, key, hour })
+      });
+      if (r.ok) {
+        if (!kurveData[key]) kurveData[key] = {};
+        kurveData[key][hour] = '';
+        setCellValue(this, '', true);
+        markDirty();
+        if (PFLICHT_PARAMS.includes(key)) updateRowStatus(key);
+        if (['spo2','hf','bd_sys','af','temp'].includes(key)) updateDokuAssistent();
+      }
+    } catch(err) {}
+  });
+});
+
+// ── Init ───────────────────────────────────────────────────
+window.addEventListener('beforeunload', e => {
+  if (dirty) { e.preventDefault(); e.returnValue = ''; }
+});
+
+loadIntervalle().then(() => loadKurve()).then(() => checkAllCells());
+setInterval(checkAllCells, 60000);
+</script>
+{% endblock %}

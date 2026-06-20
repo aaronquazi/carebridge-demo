@@ -1,0 +1,314 @@
+{% extends "base.html" %}
+{% block title %}Wunddokumentation{% endblock %}
+{% block page_title %}Wunddokumentation{% endblock %}
+{% block page_subtitle %}{{ patient.name }} · {{ patient.zimmer }}{% endblock %}
+
+{% block content %}
+<style>
+  .wunde-card {
+    border: 1px solid var(--border); border-radius: var(--radius);
+    background: var(--surface); margin-bottom: 16px; overflow: hidden;
+  }
+  .wunde-card-header {
+    display: flex; align-items: center; gap: 12px; padding: 14px 18px;
+    background: var(--surface-2); border-bottom: 1px solid var(--border-soft);
+  }
+  .wunde-ampel {
+    width: 16px; height: 16px; border-radius: 50%; flex-shrink: 0;
+    border: 1px solid rgba(0,0,0,0.12);
+  }
+  .ampel-gruen  { background: var(--green); }
+  .ampel-gelb   { background: var(--amber); }
+  .ampel-rot    { background: var(--red); }
+  .wunde-card-body { padding: 14px 18px; }
+  .verlauf-list { margin-top: 12px; }
+  .verlauf-item {
+    display: grid; grid-template-columns: 80px 1fr auto; gap: 12px; align-items: start;
+    padding: 10px 0; border-bottom: 1px solid var(--border-soft);
+  }
+  .verlauf-item:last-child { border-bottom: none; }
+  .verlauf-datum { font-family: var(--mono); font-size: 12px; color: var(--ink-3); }
+  .verlauf-detail-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin-top: 4px; }
+  .verlauf-kv { font-size: 12px; }
+  .verlauf-kv-key { color: var(--ink-3); }
+  .verlauf-kv-val { color: var(--ink); font-weight: 500; }
+  .verlauf-behandlung { font-size: 13px; color: var(--ink); margin-top: 4px; }
+  .verlauf-ampel-sm { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; border: 1px solid rgba(0,0,0,0.12); }
+  .btn-verlauf {
+    padding: 5px 10px; background: transparent; border: 1px solid var(--blue-mid);
+    color: var(--blue); border-radius: var(--radius); font-size: 12px; cursor: pointer;
+    font-family: var(--sans); white-space: nowrap;
+  }
+  .btn-verlauf:hover { background: var(--blue-light); }
+  .btn-neue-wunde {
+    padding: 8px 16px; background: var(--blue); color: #fff; border: none;
+    border-radius: var(--radius); font-size: 13px; font-weight: 500; cursor: pointer;
+  }
+  .btn-neue-wunde:hover { background: var(--blue-mid); }
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 300; align-items: center; justify-content: center; }
+  .modal-overlay.open { display: flex; }
+  .modal-box { background: var(--surface); border-radius: var(--radius); box-shadow: 0 8px 40px rgba(0,0,0,0.18); width: 600px; max-width: 95vw; max-height: 90vh; overflow-y: auto; }
+  .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--border-soft); }
+  .modal-header h3 { font-size: 14px; font-weight: 600; margin: 0; }
+  .modal-close { background: none; border: none; font-size: 18px; cursor: pointer; color: var(--ink-3); }
+  .modal-body { padding: 20px; }
+  .form-row { margin-bottom: 14px; }
+  .form-label { display: block; font-size: 12px; font-weight: 500; color: var(--ink-2); margin-bottom: 4px; }
+  .form-control { width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius); font-size: 13px; font-family: var(--sans); background: var(--surface-2); color: var(--ink); }
+  .form-control:focus { outline: none; border-color: var(--blue-mid); background: var(--surface); }
+  .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+  .modal-footer { padding: 14px 20px; border-top: 1px solid var(--border-soft); display: flex; justify-content: flex-end; gap: 8px; }
+  .btn-cancel { padding: 8px 16px; background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius); font-size: 13px; cursor: pointer; color: var(--ink); }
+  .btn-save   { padding: 8px 16px; background: var(--blue); color: #fff; border: none; border-radius: var(--radius); font-size: 13px; font-weight: 500; cursor: pointer; }
+  .photo-placeholder {
+    width: 80px; height: 60px; background: var(--surface-2); border: 1px dashed var(--border);
+    border-radius: var(--radius); display: flex; align-items: center; justify-content: center;
+    font-size: 20px; color: var(--ink-3); cursor: not-allowed; flex-shrink: 0;
+  }
+  .wunde-meta-row { display: flex; gap: 16px; flex-wrap: wrap; align-items: center; }
+  .no-verlauf { color: var(--ink-3); font-size: 13px; padding: 12px 0; }
+</style>
+
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+  <div>
+    <span class="fw-500 text-sm">{{ wunden | length }} Wunde{% if wunden | length != 1 %}n{% endif %} dokumentiert</span>
+  </div>
+  <button class="btn-neue-wunde" onclick="openNeueWunde()">+ Neue Wunde</button>
+</div>
+
+<div class="warn-banner mb-16" style="font-size:12px">
+  ⚠ DEMO — Alle Inhalte sind fiktiv und dienen ausschließlich der Demonstration.
+</div>
+
+{% if wunden %}
+{% for w in wunden %}
+<div class="wunde-card">
+  <div class="wunde-card-header">
+    <div class="wunde-ampel ampel-{{ w.aktueller_status | default('gelb') }}"></div>
+    <div style="flex:1">
+      <div style="font-weight:600;font-size:13px">{{ w.typ }}</div>
+      <div class="text-xs text-muted">{{ w.lokalisation }}</div>
+    </div>
+    <div class="wunde-meta-row">
+      <span class="badge {% if w.aktueller_status == 'gruen' %}badge-green{% elif w.aktueller_status == 'rot' %}badge-red{% else %}badge-amber{% endif %}">
+        {% if w.aktueller_status == 'gruen' %}Reizlos / Heilend{% elif w.aktueller_status == 'rot' %}Kritisch{% else %}Beobachtung{% endif %}
+      </span>
+      <span class="text-xs text-muted">Seit {{ w.erstbefund | replace('-','.') if w.erstbefund else '—' }}</span>
+      <span class="text-xs text-muted">{{ w.verlauf | length }} Einträge</span>
+    </div>
+    <button class="btn-verlauf" onclick="openVerlaufModal('{{ w.id }}')">+ Verlaufseintrag</button>
+  </div>
+  <div class="wunde-card-body">
+    {% if w.zusammenfassung %}
+    <div style="font-size:13px;color:var(--ink-2);margin-bottom:12px">{{ w.zusammenfassung }}</div>
+    {% endif %}
+
+    {% if w.verlauf %}
+    <div class="verlauf-list">
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.8px;color:var(--ink-3);margin-bottom:8px">Verlauf</div>
+      {% for v in w.verlauf | reverse %}
+      <div class="verlauf-item">
+        <div>
+          <div class="verlauf-datum">{{ v.datum[8:10] }}.{{ v.datum[5:7] }}.{{ v.datum[:4] }}</div>
+          <div style="display:flex;align-items:center;gap:4px;margin-top:4px">
+            <div class="verlauf-ampel-sm ampel-{{ v.status | default('gelb') }}"></div>
+            <span class="text-xs {% if v.status == 'gruen' %}badge-green{% elif v.status == 'rot' %}badge-red{% else %}badge-amber{% endif %}" style="padding:1px 6px;border-radius:3px;font-size:10px">
+              {% if v.status == 'gruen' %}Grün{% elif v.status == 'rot' %}Rot{% else %}Gelb{% endif %}
+            </span>
+          </div>
+          <div class="text-xs text-muted" style="margin-top:4px">{{ v.kuerzel }}</div>
+        </div>
+        <div>
+          <div class="verlauf-detail-grid">
+            {% if v.wundgrund %}<div class="verlauf-kv"><div class="verlauf-kv-key">Wundgrund</div><div class="verlauf-kv-val">{{ v.wundgrund }}</div></div>{% endif %}
+            {% if v.exsudat %}<div class="verlauf-kv"><div class="verlauf-kv-key">Exsudat</div><div class="verlauf-kv-val">{{ v.exsudat }}</div></div>{% endif %}
+            {% if v.umgebung %}<div class="verlauf-kv"><div class="verlauf-kv-key">Umgebung</div><div class="verlauf-kv-val">{{ v.umgebung }}</div></div>{% endif %}
+            {% if v.groesse %}<div class="verlauf-kv"><div class="verlauf-kv-key">Größe (L×B×T)</div><div class="verlauf-kv-val">{{ v.groesse }}</div></div>{% endif %}
+          </div>
+          {% if v.behandlung %}
+          <div class="verlauf-behandlung" style="margin-top:6px">
+            <span class="text-xs text-muted">Behandlung: </span>{{ v.behandlung }}
+          </div>
+          {% endif %}
+        </div>
+        <div class="photo-placeholder" title="Foto-Upload — In Demo nicht verfügbar">📷</div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="no-verlauf">Noch kein Verlauf dokumentiert.</div>
+    {% endif %}
+  </div>
+</div>
+{% endfor %}
+{% else %}
+<div class="card" style="padding:40px;text-align:center;color:var(--ink-3)">Keine Wunden dokumentiert.</div>
+{% endif %}
+
+<!-- Modal: Neue Wunde -->
+<div class="modal-overlay" id="modal-neue-wunde">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3>Neue Wunde dokumentieren</h3>
+      <button class="modal-close" onclick="closeNeueWunde()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row-2">
+        <div class="form-row">
+          <label class="form-label">Wundtyp</label>
+          <select class="form-control" id="w-typ">
+            <option>Dekubitus</option>
+            <option>Operationswunde</option>
+            <option>Ulcus</option>
+            <option>Tracheostomawunde</option>
+            <option>Sonstige</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label class="form-label">Erstbefund-Datum</label>
+          <input type="date" class="form-control" id="w-erstbefund">
+        </div>
+      </div>
+      <div class="form-row">
+        <label class="form-label">Lokalisation</label>
+        <input type="text" class="form-control" id="w-lokalisation" placeholder="z.B. Sakrum, linke Ferse, Trachea anterior">
+      </div>
+      <div class="form-row">
+        <label class="form-label">Kurzbeschreibung / Erstbefund</label>
+        <textarea class="form-control" id="w-zusammenfassung" rows="3" style="resize:vertical"
+          placeholder="Erstbefund und Ausgangslage..."></textarea>
+      </div>
+      <div class="form-row">
+        <label class="form-label">Aktueller Status</label>
+        <select class="form-control" id="w-status">
+          <option value="gruen">🟢 Reizlos / Heilend</option>
+          <option value="gelb" selected>🟡 Beobachtung nötig</option>
+          <option value="rot">🔴 Kritisch / Verschlechterung</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeNeueWunde()">Abbrechen</button>
+      <button class="btn-save" onclick="saveNeueWunde()">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Verlaufseintrag -->
+<div class="modal-overlay" id="modal-verlauf">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3>Verlaufseintrag hinzufügen</h3>
+      <button class="modal-close" onclick="closeVerlaufModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row-2">
+        <div class="form-row">
+          <label class="form-label">Datum</label>
+          <input type="date" class="form-control" id="vl-datum">
+        </div>
+        <div class="form-row">
+          <label class="form-label">Kürzel</label>
+          <input type="text" class="form-control" id="vl-kuerzel" maxlength="4">
+        </div>
+      </div>
+      <div class="form-row-3">
+        <div class="form-row">
+          <label class="form-label">Wundgrund</label>
+          <input type="text" class="form-control" id="vl-wundgrund" placeholder="epithelialisiert, granulierend...">
+        </div>
+        <div class="form-row">
+          <label class="form-label">Exsudat</label>
+          <input type="text" class="form-control" id="vl-exsudat" placeholder="kein, serös, eitrig...">
+        </div>
+        <div class="form-row">
+          <label class="form-label">Größe (L×B×T cm)</label>
+          <input type="text" class="form-control" id="vl-groesse" placeholder="z.B. 2×1,5×0,3">
+        </div>
+      </div>
+      <div class="form-row">
+        <label class="form-label">Umgebung</label>
+        <input type="text" class="form-control" id="vl-umgebung" placeholder="reizlos, Rötung, Mazeration...">
+      </div>
+      <div class="form-row">
+        <label class="form-label">Behandlung</label>
+        <textarea class="form-control" id="vl-behandlung" rows="3" style="resize:vertical"
+          placeholder="Wundbehandlung, verwendete Produkte..."></textarea>
+      </div>
+      <div class="form-row">
+        <label class="form-label">Status</label>
+        <select class="form-control" id="vl-status">
+          <option value="gruen">🟢 Grün — Reizlos / Heilend</option>
+          <option value="gelb" selected>🟡 Gelb — Beobachtung nötig</option>
+          <option value="rot">🔴 Rot — Kritisch</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeVerlaufModal()">Abbrechen</button>
+      <button class="btn-save" onclick="saveVerlauf()">Speichern</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  let _currentWundeId = null;
+
+  function openNeueWunde() {
+    document.getElementById('w-typ').value = 'Sonstige';
+    document.getElementById('w-erstbefund').value = new Date().toISOString().slice(0,10);
+    document.getElementById('w-lokalisation').value = '';
+    document.getElementById('w-zusammenfassung').value = '';
+    document.getElementById('w-status').value = 'gelb';
+    document.getElementById('modal-neue-wunde').classList.add('open');
+  }
+  function closeNeueWunde() { document.getElementById('modal-neue-wunde').classList.remove('open'); }
+
+  async function saveNeueWunde() {
+    const lokalisation = document.getElementById('w-lokalisation').value.trim();
+    if (!lokalisation) { alert('Bitte Lokalisation angeben.'); return; }
+    const body = {
+      typ:              document.getElementById('w-typ').value,
+      erstbefund:       document.getElementById('w-erstbefund').value,
+      lokalisation,
+      zusammenfassung:  document.getElementById('w-zusammenfassung').value,
+      aktueller_status: document.getElementById('w-status').value,
+    };
+    const r = await fetch('/api/wunde/neu', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+    if (r.ok) location.reload();
+  }
+
+  function openVerlaufModal(wundeId) {
+    _currentWundeId = wundeId;
+    document.getElementById('vl-datum').value = new Date().toISOString().slice(0,10);
+    document.getElementById('vl-kuerzel').value = '';
+    document.getElementById('vl-wundgrund').value = '';
+    document.getElementById('vl-exsudat').value = '';
+    document.getElementById('vl-groesse').value = '';
+    document.getElementById('vl-umgebung').value = '';
+    document.getElementById('vl-behandlung').value = '';
+    document.getElementById('vl-status').value = 'gelb';
+    document.getElementById('modal-verlauf').classList.add('open');
+  }
+  function closeVerlaufModal() { document.getElementById('modal-verlauf').classList.remove('open'); }
+
+  async function saveVerlauf() {
+    if (!_currentWundeId) return;
+    const body = {
+      datum:      document.getElementById('vl-datum').value,
+      kuerzel:    document.getElementById('vl-kuerzel').value,
+      wundgrund:  document.getElementById('vl-wundgrund').value,
+      exsudat:    document.getElementById('vl-exsudat').value,
+      groesse:    document.getElementById('vl-groesse').value,
+      umgebung:   document.getElementById('vl-umgebung').value,
+      behandlung: document.getElementById('vl-behandlung').value,
+      status:     document.getElementById('vl-status').value,
+    };
+    const r = await fetch(`/api/wunde/${_currentWundeId}/verlauf`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+    if (r.ok) location.reload();
+  }
+</script>
+{% endblock %}

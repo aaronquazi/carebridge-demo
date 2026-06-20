@@ -1,0 +1,305 @@
+{% extends "base.html" %}
+{% block title %}Pflegebericht{% endblock %}
+{% block page_title %}Pflegebericht{% endblock %}
+{% block page_subtitle %}{{ patient.name }} · {{ patient.zimmer }}{% endblock %}
+
+{% block content %}
+<style>
+  .pb-filter-bar {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    padding: 12px 16px; background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); margin-bottom: 16px;
+  }
+  .pb-filter-bar select, .pb-filter-bar input {
+    padding: 6px 10px; border: 1px solid var(--border); border-radius: var(--radius);
+    font-size: 13px; font-family: var(--sans); background: var(--surface-2); color: var(--ink);
+  }
+  .pb-filter-bar label { font-size: 12px; color: var(--ink-3); }
+  .pb-entry {
+    border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 8px;
+    background: var(--surface); overflow: hidden; border-left: 4px solid var(--border);
+    transition: box-shadow 0.15s;
+  }
+  .pb-entry:hover { box-shadow: var(--shadow); }
+  .pb-entry.kat-Allgemein     { border-left-color: #8A9BB0; }
+  .pb-entry.kat-Beatmung      { border-left-color: var(--blue); }
+  .pb-entry.kat-Pflege        { border-left-color: var(--green); }
+  .pb-entry.kat-Medikamente   { border-left-color: #7C3AED; }
+  .pb-entry.kat-Besonderheit  { border-left-color: var(--amber); }
+  .pb-entry.kat-Arzt          { border-left-color: var(--red); }
+  .pb-entry-head {
+    display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+    border-bottom: 1px solid var(--border-soft);
+  }
+  .pb-kat-badge {
+    display: inline-block; padding: 2px 8px; border-radius: 3px;
+    font-size: 11px; font-weight: 500;
+  }
+  .pb-entry-text { padding: 10px 14px; font-size: 13px; line-height: 1.6; color: var(--ink); }
+  .pb-entry-actions { display: flex; gap: 6px; margin-left: auto; }
+  .pb-btn-sm {
+    padding: 3px 8px; border-radius: 3px; border: 1px solid var(--border);
+    background: var(--surface-2); font-size: 11px; cursor: pointer; color: var(--ink-2);
+    transition: all 0.15s; font-family: var(--sans);
+  }
+  .pb-btn-sm:hover { background: var(--border); }
+  .pb-btn-del:hover { background: var(--red-light); color: var(--red); border-color: #FCA5A5; }
+  .btn-new-pb {
+    padding: 8px 16px; background: var(--blue); color: #fff; border: none;
+    border-radius: var(--radius); font-size: 13px; font-weight: 500; cursor: pointer;
+    transition: background 0.15s;
+  }
+  .btn-new-pb:hover { background: var(--blue-mid); }
+  .modal-overlay {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+    z-index: 300; align-items: center; justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal-box {
+    background: var(--surface); border-radius: var(--radius);
+    box-shadow: 0 8px 40px rgba(0,0,0,0.18); width: 560px; max-width: 95vw;
+    max-height: 90vh; overflow-y: auto;
+  }
+  .modal-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 20px; border-bottom: 1px solid var(--border-soft);
+  }
+  .modal-header h3 { font-size: 14px; font-weight: 600; margin: 0; }
+  .modal-close { background: none; border: none; font-size: 18px; cursor: pointer; color: var(--ink-3); }
+  .modal-body { padding: 20px; }
+  .form-row { margin-bottom: 14px; }
+  .form-label { display: block; font-size: 12px; font-weight: 500; color: var(--ink-2); margin-bottom: 4px; }
+  .form-control {
+    width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius);
+    font-size: 13px; font-family: var(--sans); background: var(--surface-2); color: var(--ink);
+  }
+  .form-control:focus { outline: none; border-color: var(--blue-mid); background: var(--surface); }
+  .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .modal-footer { padding: 14px 20px; border-top: 1px solid var(--border-soft); display: flex; justify-content: flex-end; gap: 8px; }
+  .btn-cancel { padding: 8px 16px; background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius); font-size: 13px; cursor: pointer; color: var(--ink); }
+  .btn-save   { padding: 8px 16px; background: var(--blue); color: #fff; border: none; border-radius: var(--radius); font-size: 13px; font-weight: 500; cursor: pointer; }
+  .confirm-overlay {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+    z-index: 400; align-items: center; justify-content: center;
+  }
+  .confirm-overlay.open { display: flex; }
+  .confirm-box {
+    background: var(--surface); border-radius: var(--radius); padding: 24px 28px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.18); width: 380px; text-align: center;
+  }
+  .confirm-btns { display: flex; gap: 10px; justify-content: center; margin-top: 16px; }
+  .btn-confirm-del { padding: 8px 20px; background: var(--red); color: #fff; border: none; border-radius: var(--radius); font-size: 13px; cursor: pointer; }
+  .no-entries { padding: 40px; text-align: center; color: var(--ink-3); font-size: 14px; }
+
+  .kat-badge-Allgemein   { background:#F1F3F5; color:#4A5568; }
+  .kat-badge-Beatmung    { background:var(--blue-light); color:var(--blue); }
+  .kat-badge-Pflege      { background:var(--green-light); color:var(--green); }
+  .kat-badge-Medikamente { background:#F3E8FF; color:#7C3AED; }
+  .kat-badge-Besonderheit{ background:var(--amber-light); color:var(--amber); }
+  .kat-badge-Arzt        { background:var(--red-light); color:var(--red); }
+</style>
+
+<!-- Toolbar -->
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+  <div>
+    <span class="fw-500 text-sm">{{ eintraege | length }} Einträge</span>
+  </div>
+  <button class="btn-new-pb" onclick="openModal()">+ Neuer Eintrag</button>
+</div>
+
+<!-- Filter Bar -->
+<div class="pb-filter-bar">
+  <label>Kategorie:</label>
+  <select id="filter-kat" onchange="applyFilter()">
+    <option value="">Alle</option>
+    <option>Allgemein</option>
+    <option>Beatmung</option>
+    <option>Pflege</option>
+    <option>Medikamente</option>
+    <option>Besonderheit</option>
+    <option>Arzt informiert</option>
+  </select>
+  <label style="margin-left:8px">Von:</label>
+  <input type="date" id="filter-von" onchange="applyFilter()">
+  <label>Bis:</label>
+  <input type="date" id="filter-bis" onchange="applyFilter()">
+  <button class="pb-btn-sm" onclick="clearFilter()">✕ Zurücksetzen</button>
+</div>
+
+<div class="warn-banner mb-16" style="font-size:12px">
+  ⚠ DEMO — Alle Inhalte sind fiktiv und dienen ausschließlich der Demonstration.
+</div>
+
+<!-- Entries -->
+<div id="pb-list">
+{% if eintraege %}
+  {% for e in eintraege %}
+  {% set kat_key = e.kategorie | replace(' informiert','') %}
+  <div class="pb-entry kat-{{ kat_key }}" data-kat="{{ e.kategorie }}" data-datum="{{ e.datum }}" data-id="{{ e.id }}">
+    <div class="pb-entry-head">
+      <span class="pb-kat-badge kat-badge-{{ kat_key }}">{{ e.kategorie }}</span>
+      <span class="text-xs text-muted">{{ e.datum[8:10] }}.{{ e.datum[5:7] }}.{{ e.datum[:4] }}</span>
+      <span class="text-xs text-muted">{{ e.uhrzeit }} Uhr</span>
+      <span class="badge badge-gray">{{ e.kuerzel }}</span>
+      <div class="pb-entry-actions">
+        <button class="pb-btn-sm" onclick='openModalEdit({{ e | tojson }})'>✏</button>
+        <button class="pb-btn-sm pb-btn-del" onclick="confirmDelete('{{ e.id }}','{{ e.titel | default(e.kategorie) }}')">🗑</button>
+      </div>
+    </div>
+    <div class="pb-entry-text">{{ e.text }}</div>
+  </div>
+  {% endfor %}
+{% else %}
+  <div class="no-entries card">Noch keine Einträge vorhanden.</div>
+{% endif %}
+</div>
+
+<!-- Modal: Neuer/Edit Eintrag -->
+<div class="modal-overlay" id="modal-pb">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3 id="modal-pb-title">Neuer Pflegebericht-Eintrag</h3>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row-2">
+        <div class="form-row">
+          <label class="form-label">Datum</label>
+          <input type="date" class="form-control" id="pb-datum">
+        </div>
+        <div class="form-row">
+          <label class="form-label">Uhrzeit</label>
+          <input type="time" class="form-control" id="pb-uhrzeit">
+        </div>
+      </div>
+      <div class="form-row-2">
+        <div class="form-row">
+          <label class="form-label">Kategorie</label>
+          <select class="form-control" id="pb-kategorie">
+            <option>Allgemein</option>
+            <option>Beatmung</option>
+            <option>Pflege</option>
+            <option>Medikamente</option>
+            <option>Besonderheit</option>
+            <option>Arzt informiert</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label class="form-label">Kürzel</label>
+          <input type="text" class="form-control" id="pb-kuerzel" maxlength="4" placeholder="z.B. AQ">
+        </div>
+      </div>
+      <div class="form-row">
+        <label class="form-label">Eintrag *</label>
+        <textarea class="form-control" id="pb-text" rows="5" style="resize:vertical"
+          placeholder="Pflegebericht-Eintrag..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal()">Abbrechen</button>
+      <button class="btn-save" onclick="saveEintrag()">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm Delete -->
+<div class="confirm-overlay" id="confirm-overlay">
+  <div class="confirm-box">
+    <div style="font-size:15px;font-weight:600;margin-bottom:8px">Eintrag löschen?</div>
+    <div class="text-sm text-muted" id="confirm-text">Dieser Vorgang kann nicht rückgängig gemacht werden.</div>
+    <div class="confirm-btns">
+      <button class="btn-cancel" onclick="closeConfirm()">Abbrechen</button>
+      <button class="btn-confirm-del" onclick="doDelete()">Löschen</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  let _editId = null;
+  let _deleteId = null;
+
+  function openModal() {
+    _editId = null;
+    document.getElementById('modal-pb-title').textContent = 'Neuer Pflegebericht-Eintrag';
+    document.getElementById('pb-datum').value = new Date().toISOString().slice(0,10);
+    document.getElementById('pb-uhrzeit').value = new Date().toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'});
+    document.getElementById('pb-kategorie').value = 'Allgemein';
+    document.getElementById('pb-kuerzel').value = '';
+    document.getElementById('pb-text').value = '';
+    document.getElementById('modal-pb').classList.add('open');
+  }
+
+  function openModalEdit(e) {
+    _editId = e.id;
+    document.getElementById('modal-pb-title').textContent = 'Eintrag bearbeiten';
+    document.getElementById('pb-datum').value = e.datum || '';
+    document.getElementById('pb-uhrzeit').value = e.uhrzeit || '';
+    document.getElementById('pb-kategorie').value = e.kategorie || 'Allgemein';
+    document.getElementById('pb-kuerzel').value = e.kuerzel || '';
+    document.getElementById('pb-text').value = e.text || '';
+    document.getElementById('modal-pb').classList.add('open');
+  }
+
+  function closeModal() { document.getElementById('modal-pb').classList.remove('open'); }
+
+  async function saveEintrag() {
+    const text = document.getElementById('pb-text').value.trim();
+    if (!text) { alert('Bitte Eintrag ausfüllen.'); return; }
+    const body = {
+      datum:     document.getElementById('pb-datum').value,
+      uhrzeit:   document.getElementById('pb-uhrzeit').value,
+      kategorie: document.getElementById('pb-kategorie').value,
+      kuerzel:   document.getElementById('pb-kuerzel').value,
+      text
+    };
+    const url    = _editId ? `/api/pflegebericht/eintrag/${_editId}` : '/api/pflegebericht/eintrag';
+    const method = _editId ? 'PUT' : 'POST';
+    const r = await fetch(url, { method, headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+    if (r.ok) location.reload();
+  }
+
+  function confirmDelete(id, label) {
+    _deleteId = id;
+    document.getElementById('confirm-text').textContent = 'Eintrag löschen?';
+    document.getElementById('confirm-overlay').classList.add('open');
+  }
+
+  function closeConfirm() { document.getElementById('confirm-overlay').classList.remove('open'); }
+
+  async function doDelete() {
+    if (!_deleteId) return;
+    const r = await fetch(`/api/pflegebericht/eintrag/${_deleteId}`, { method: 'DELETE' });
+    if (r.ok) location.reload();
+  }
+
+  function applyFilter() {
+    const kat = document.getElementById('filter-kat').value;
+    const von = document.getElementById('filter-von').value;
+    const bis = document.getElementById('filter-bis').value;
+    document.querySelectorAll('#pb-list .pb-entry').forEach(el => {
+      const eKat   = el.dataset.kat;
+      const eDatum = el.dataset.datum;
+      let show = true;
+      if (kat && eKat !== kat) show = false;
+      if (von && eDatum < von)  show = false;
+      if (bis && eDatum > bis)  show = false;
+      el.style.display = show ? '' : 'none';
+    });
+  }
+
+  function clearFilter() {
+    document.getElementById('filter-kat').value = '';
+    document.getElementById('filter-von').value = '';
+    document.getElementById('filter-bis').value = '';
+    applyFilter();
+  }
+
+  // Format dates in entries
+  document.querySelectorAll('.pb-entry-head').forEach(hd => {
+    const spans = hd.querySelectorAll('span.text-xs.text-muted');
+    // Remove the raw ISO date span (we do proper formatting in template)
+  });
+</script>
+{% endblock %}

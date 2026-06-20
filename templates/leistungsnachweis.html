@@ -1,0 +1,442 @@
+{% extends "base.html" %}
+{% block title %}Leistungsnachweis{% endblock %}
+{% block page_title %}Leistungsnachweis{% endblock %}
+{% block page_subtitle %}Pflegeleistungen · {{ patient.name }} · Heute{% endblock %}
+
+{% block content %}
+<style>
+  /* Modal */
+  .modal-backdrop {
+    display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:1000;
+    align-items:center;justify-content:center;
+  }
+  .modal-backdrop.open { display:flex; }
+  .modal-box {
+    background:#fff;border-radius:10px;box-shadow:0 20px 60px rgba(0,0,0,0.25);
+    padding:24px 28px;width:420px;max-width:96vw;animation:popIn 0.18s ease;
+  }
+  @keyframes popIn { from { opacity:0;transform:scale(0.93) } to { opacity:1;transform:scale(1) } }
+  .modal-title { font-size:14px;font-weight:700;color:var(--ink);margin-bottom:4px; }
+  .modal-sub { font-size:12px;color:var(--ink-3);margin-bottom:16px; }
+  .modal-row { margin-bottom:12px; }
+  .modal-label { font-size:11px;font-weight:600;color:var(--ink-2);margin-bottom:4px;display:block; }
+  .modal-input {
+    width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:6px;
+    font-family:var(--sans);font-size:13px;color:var(--ink);background:var(--surface);
+    box-sizing:border-box;
+  }
+  .modal-input:focus { outline:none;border-color:var(--blue);box-shadow:0 0 0 2px rgba(26,86,219,0.12); }
+  .modal-time-info {
+    padding:8px 12px;border-radius:6px;font-size:12px;margin-bottom:12px;
+    display:flex;align-items:center;gap:8px;
+  }
+  .modal-footer { display:flex;gap:8px;justify-content:flex-end;margin-top:16px;padding-top:12px;border-top:1px solid var(--border-soft); }
+  .btn-modal-cancel { padding:7px 16px;border:1px solid var(--border);border-radius:6px;background:transparent;font-size:12px;cursor:pointer;font-family:var(--sans); }
+  .btn-modal-ok { padding:7px 20px;border:none;border-radius:6px;background:var(--blue);color:#fff;font-size:12px;font-weight:500;cursor:pointer;font-family:var(--sans); }
+  .btn-modal-ok:hover { background:var(--blue-mid); }
+
+  /* Abzeichnen button */
+  .btn-abz { padding:3px 12px;border:1px solid var(--blue);color:var(--blue);border-radius:4px;background:transparent;font-size:11px;font-weight:500;cursor:pointer;font-family:var(--sans);white-space:nowrap; }
+  .btn-abz:hover { background:var(--blue-light); }
+
+  /* Rückgängig-Button (10-Min-Fenster) */
+  .btn-undo { padding:3px 10px;border:1px solid #F59E0B;color:#B45309;border-radius:4px;background:transparent;font-size:11px;cursor:pointer;font-family:var(--sans);white-space:nowrap; }
+  .btn-undo:hover { background:#FFFBEB; }
+
+  /* Schichtbemerkungen */
+  .bemerk-box {
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+    box-shadow:var(--shadow);padding:14px 16px;margin-top:4px;
+  }
+  .bemerk-entry {
+    padding:10px 12px;background:var(--surface-2);border:1px solid var(--border-soft);
+    border-radius:6px;margin-bottom:8px;
+  }
+  .bemerk-meta { font-size:10px;color:var(--ink-3);margin-bottom:4px; }
+  .bemerk-text { font-size:12px;color:var(--ink);line-height:1.5; }
+</style>
+
+<!-- Fortschritt -->
+<div class="grid-3 mb-16">
+  <div class="stat-tile {% if bestaetigt == gesamt %}ok{% elif bestaetigt >= gesamt * 0.7 %}warn{% else %}alert{% endif %}">
+    <div class="stat-label">Bestätigt</div>
+    <div class="stat-value">{{ bestaetigt }}<span class="stat-unit">/ {{ gesamt }}</span></div>
+    <div class="stat-status">
+      <span class="dot {% if bestaetigt == gesamt %}dot-green{% else %}dot-amber{% endif %}"></span>
+      <span class="text-xs text-muted">Leistungen heute</span>
+    </div>
+  </div>
+  <div class="stat-tile {% if gesamt - bestaetigt == 0 %}ok{% else %}warn{% endif %}">
+    <div class="stat-label">Offen</div>
+    <div class="stat-value" id="offen-count">{{ gesamt - bestaetigt }}</div>
+    <div class="stat-status">
+      <span class="dot {% if gesamt - bestaetigt == 0 %}dot-green{% else %}dot-amber{% endif %}"></span>
+      <span class="text-xs text-muted">noch ausstehend</span>
+    </div>
+  </div>
+  <div class="stat-tile info">
+    <div class="stat-label">Fortschritt</div>
+    <div class="stat-value" id="progress-pct">{{ ((bestaetigt / gesamt) * 100) | int }}<span class="stat-unit">%</span></div>
+    <div class="stat-status">
+      <div style="width:100%;background:var(--border);border-radius:2px;height:4px;margin-top:4px">
+        <div id="progress-bar" style="width:{{ ((bestaetigt / gesamt) * 100) | int }}%;background:var(--blue);height:4px;border-radius:2px;transition:width 0.3s"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Leistungsliste -->
+<div class="card mb-16">
+  <div class="card-header">
+    <div class="card-title">Geplante Leistungen — Tagschicht</div>
+    <span class="badge badge-gray">Pflegekraft: A. Berger</span>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:80px">Zeit</th>
+          <th>Leistung</th>
+          <th style="width:60px">Kürzel</th>
+          <th style="width:140px">Pflegekraft</th>
+          <th style="width:110px">Status</th>
+          <th style="width:110px">Abzeichnen</th>
+        </tr>
+      </thead>
+      <tbody id="leistungen-tbody">
+        {% for l in leistungen %}
+        <tr id="row-{{ loop.index0 }}" data-id="{{ l.kuerzel }}_{{ l.zeit }}" data-zeit="{{ l.zeit }}" data-bestaetigt="{{ 'true' if l.bestaetigt else 'false' }}" style="{% if not l.bestaetigt %}background:rgba(254,243,199,0.3){% endif %}">
+          <td class="mono" style="font-weight:500">{{ l.zeit }}</td>
+          <td class="text-sm" style="font-weight:{% if not l.bestaetigt %}500{% else %}400{% endif %}">{{ l.leistung }}</td>
+          <td><span class="badge badge-gray">{{ l.kuerzel }}</span></td>
+          <td class="text-sm">
+            {% if l.pflegekraft %}<span class="pflegekraft-cell">{{ l.pflegekraft }}</span>{% else %}<span class="text-muted pflegekraft-cell">—</span>{% endif %}
+          </td>
+          <td class="status-cell">
+            {% if l.bestaetigt %}
+            <span class="badge badge-green">✓ bestätigt</span>
+            {% else %}
+            <span class="badge badge-amber">⏳ offen</span>
+            {% endif %}
+          </td>
+          <td class="abz-cell">
+            {% if not l.bestaetigt %}
+            <button class="btn-abz" onclick="openModal('{{ l.kuerzel }}_{{ l.zeit }}', '{{ l.leistung }}', '{{ l.zeit }}')">Abzeichnen</button>
+            {% else %}
+            <span class="text-xs text-muted">—</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Kürzel-Legende -->
+<div class="card mb-16">
+  <div class="card-header">
+    <div class="card-title">Kürzel-Legende</div>
+  </div>
+  <div class="card-body">
+    <div class="grid-4" style="gap:8px">
+      {% for k, v in [('GKP','Ganzkörperpflege'),('MED','Medikamentengabe'),('TK','Trachealkanülenpflege'),('ABS','Absaugung'),('INH','Inhalation'),('VIT','Vitalzeichenkontrolle'),('LAG','Lagerung'),('MP','Mund-/Teilpflege')] %}
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="badge badge-blue">{{ k }}</span>
+        <span class="text-xs text-muted">{{ v }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SCHICHTBEMERKUNGEN
+     ═══════════════════════════════════════════ -->
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">Schichtbemerkungen</div>
+    <span class="badge badge-gray" id="bemerk-count">0 Einträge</span>
+  </div>
+  <div class="card-body">
+
+    <!-- Eingabe -->
+    <div style="display:grid;grid-template-columns:90px 140px 1fr auto;gap:8px;align-items:flex-start;margin-bottom:16px">
+      <div>
+        <label class="modal-label">Kürzel</label>
+        <input id="bemerk-kuerzel" class="modal-input" placeholder="AB" maxlength="4" style="font-family:var(--mono);font-weight:600">
+      </div>
+      <div>
+        <label class="modal-label">Schicht</label>
+        <select id="bemerk-schicht" class="modal-input">
+          <option value="Frühdienst">Frühdienst</option>
+          <option value="Spätdienst">Spätdienst</option>
+          <option value="Nachtdienst">Nachtdienst</option>
+        </select>
+      </div>
+      <div>
+        <label class="modal-label">Bemerkung</label>
+        <textarea id="bemerk-text" class="modal-input" rows="2" placeholder="Beobachtungen, Besonderheiten, Übergabehinweise …" style="resize:vertical"></textarea>
+      </div>
+      <div style="padding-top:18px">
+        <button class="btn-add" onclick="saveBemerkung()" style="white-space:nowrap;padding:8px 14px">Eintragen</button>
+      </div>
+    </div>
+
+    <!-- Liste -->
+    <div id="bemerk-list"></div>
+    <div id="bemerk-empty" style="text-align:center;padding:20px;color:var(--ink-3);font-size:12px">
+      Noch keine Schichtbemerkungen für heute.
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: Abzeichnen ═══ -->
+<div class="modal-backdrop" id="modal-backdrop" onclick="closeModalOutside(event)">
+  <div class="modal-box">
+    <div class="modal-title">Leistung abzeichnen</div>
+    <div class="modal-sub" id="modal-leistung-name"></div>
+
+    <div id="modal-time-info" class="modal-time-info"></div>
+
+    <div class="modal-row">
+      <label class="modal-label">Ihr Kürzel *</label>
+      <input id="modal-kuerzel" class="modal-input" placeholder="z.B. AB" maxlength="4" style="font-family:var(--mono);font-weight:600;text-transform:uppercase" oninput="this.value=this.value.toUpperCase()">
+    </div>
+
+    <div class="modal-row" id="modal-begruendung-row" style="display:none">
+      <label class="modal-label">Begründung für Nacherfassung *</label>
+      <textarea id="modal-begruendung" class="modal-input" rows="3" placeholder="Bitte begründen, warum die Dokumentation nachgetragen wird …"></textarea>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-modal-cancel" onclick="closeModal()">Abbrechen</button>
+      <button class="btn-modal-ok" onclick="submitAbzeichnen()">Bestätigen</button>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentModalId   = null;
+let currentModalZeit = null;
+let signoffs         = {};
+let bemerkungen      = [];
+let bestaetigt       = {{ bestaetigt }};
+let gesamt           = {{ gesamt }};
+
+// ── Modal ──────────────────────────────────────────────────
+function openModal(id, leistung, zeit) {
+  currentModalId   = id;
+  currentModalZeit = zeit;
+  document.getElementById('modal-leistung-name').textContent = leistung + ' · ' + zeit + ' Uhr';
+  document.getElementById('modal-kuerzel').value = '';
+  document.getElementById('modal-begruendung').value = '';
+
+  const info = checkTimeWindow(zeit);
+  const el   = document.getElementById('modal-time-info');
+  el.textContent = info.text;
+  el.style.background = info.bg;
+  el.style.color      = info.color;
+  el.style.border     = '1px solid ' + info.border;
+
+  const begruendungRow = document.getElementById('modal-begruendung-row');
+  begruendungRow.style.display = info.requireBegruendung ? 'block' : 'none';
+
+  document.getElementById('modal-backdrop').classList.add('open');
+  setTimeout(() => document.getElementById('modal-kuerzel').focus(), 80);
+}
+
+function closeModal() {
+  document.getElementById('modal-backdrop').classList.remove('open');
+  currentModalId = null;
+}
+
+function closeModalOutside(e) {
+  if (e.target === document.getElementById('modal-backdrop')) closeModal();
+}
+
+function checkTimeWindow(zeitStr) {
+  const [h, m] = zeitStr.split(':').map(Number);
+  const geplant = h * 60 + m;
+  const jetzt = new Date();
+  const now = jetzt.getHours() * 60 + jetzt.getMinutes();
+  const diff = now - geplant;
+
+  if (diff < -10) {
+    return { text: '⏰ Leistung liegt noch in der Zukunft — Frühdokumentation', bg: '#eff6ff', color: '#1e40af', border: '#BFDBFE', requireBegruendung: false };
+  } else if (diff <= 30) {
+    return { text: '✓ Zeitfenster korrekt — Leistung fristgerecht', bg: '#f0fdf8', color: '#0D7A5C', border: '#6EE7B7', requireBegruendung: false };
+  } else {
+    const min = diff;
+    return { text: `⚠ Nacherfassung — ${min} Min. nach geplantem Zeitpunkt. Begründung erforderlich.`, bg: '#fff5f5', color: '#C0392B', border: '#FCA5A5', requireBegruendung: true };
+  }
+}
+
+async function submitAbzeichnen() {
+  const kuerzel = document.getElementById('modal-kuerzel').value.trim();
+  if (!kuerzel) { document.getElementById('modal-kuerzel').focus(); return; }
+
+  const info = checkTimeWindow(currentModalZeit);
+  if (info.requireBegruendung) {
+    const b = document.getElementById('modal-begruendung').value.trim();
+    if (!b) { document.getElementById('modal-begruendung').focus(); return; }
+  }
+
+  const begruendung = document.getElementById('modal-begruendung').value.trim();
+  try {
+    const r = await fetch('/api/leistung/abzeichnen', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: currentModalId, kuerzel, begruendung })
+    });
+    const data = await r.json();
+    if (data.ok) {
+      signoffs[currentModalId] = { kuerzel, zeitstempel: data.zeitstempel, begruendung };
+      markRowDone(currentModalId, kuerzel, data.zeitstempel, true);
+      closeModal();
+    }
+  } catch(e) {}
+}
+
+function isWithin10Min(zeitstempel) {
+  if (!zeitstempel) return false;
+  const parts = zeitstempel.split(':');
+  if (parts.length < 2) return false;
+  const ts = parseInt(parts[0]) * 60 + parseInt(parts[1]);
+  const now = new Date();
+  const nowMin = now.getHours() * 60 + now.getMinutes();
+  const diff = nowMin - ts;
+  return diff >= 0 && diff <= 10;
+}
+
+function markRowDone(id, kuerzel, zeitstempel, canUndo) {
+  const row = document.querySelector(`tr[data-id="${id}"]`);
+  if (!row) return;
+  row.style.background = '';
+  row.querySelector('.status-cell').innerHTML = `<span class="badge badge-green">✓ ${kuerzel} ${zeitstempel}</span>`;
+  const showUndo = canUndo !== undefined ? canUndo : isWithin10Min(zeitstempel);
+  row.querySelector('.abz-cell').innerHTML = showUndo
+    ? `<button class="btn-undo" onclick="rueckgaengigMachen('${id}')">↩ Rückgängig</button>`
+    : `<span class="text-xs text-muted">—</span>`;
+  row.querySelector('.pflegekraft-cell').textContent = kuerzel;
+  bestaetigt++;
+  updateProgress();
+}
+
+async function rueckgaengigMachen(id) {
+  try {
+    const r = await fetch('/api/leistung/rueckgaengig', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id })
+    });
+    const data = await r.json();
+    if (data.ok) {
+      delete signoffs[id];
+      const row = document.querySelector(`tr[data-id="${id}"]`);
+      if (row) {
+        const [kuerzel, zeit] = id.split('_');
+        row.style.background = 'rgba(254,243,199,0.3)';
+        row.querySelector('.status-cell').innerHTML = `<span class="badge badge-amber">⏳ offen</span>`;
+        row.querySelector('.abz-cell').innerHTML = `<button class="btn-abz" onclick="openModal('${id}', '${kuerzel}', '${zeit}')">Abzeichnen</button>`;
+        const pfCell = row.querySelector('.pflegekraft-cell');
+        if (pfCell) pfCell.textContent = '—';
+        bestaetigt--;
+        updateProgress();
+      }
+    } else {
+      alert(data.error || 'Rückgängig nicht möglich – 10-Minuten-Fenster abgelaufen.');
+    }
+  } catch(e) {
+    alert('Fehler beim Rückgängigmachen.');
+  }
+}
+
+function updateProgress() {
+  const offen = gesamt - bestaetigt;
+  document.getElementById('offen-count').innerHTML = offen + '<span class="stat-unit"></span>';
+  const pct = Math.round((bestaetigt / gesamt) * 100);
+  document.getElementById('progress-pct').innerHTML = pct + '<span class="stat-unit">%</span>';
+  document.getElementById('progress-bar').style.width = pct + '%';
+}
+
+// ── Load saved signoffs on page load ──────────────────────
+async function loadSignoffs() {
+  try {
+    const r = await fetch('/api/leistung/status');
+    signoffs = await r.json();
+    for (const id in signoffs) {
+      const s = signoffs[id];
+      const row = document.querySelector(`tr[data-id="${id}"]`);
+      if (row && row.dataset.bestaetigt === 'false') {
+        markRowDone(id, s.kuerzel, s.zeitstempel);
+      }
+    }
+  } catch(e) {}
+}
+
+// ── Schichtbemerkungen ─────────────────────────────────────
+async function loadBemerkungen() {
+  try {
+    const r = await fetch('/api/bemerkung/laden');
+    bemerkungen = await r.json();
+    renderBemerkungen();
+  } catch(e) {}
+}
+
+function renderBemerkungen() {
+  const list  = document.getElementById('bemerk-list');
+  const empty = document.getElementById('bemerk-empty');
+  const count = document.getElementById('bemerk-count');
+  count.textContent = bemerkungen.length + ' Eintr' + (bemerkungen.length === 1 ? 'ag' : 'äge');
+  if (bemerkungen.length === 0) {
+    list.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+  list.innerHTML = bemerkungen.slice().reverse().map(b => `
+    <div class="bemerk-entry">
+      <div class="bemerk-meta">
+        <strong>${esc(b.kuerzel)}</strong> · ${esc(b.schicht)} · ${esc(b.zeitstempel)} Uhr
+      </div>
+      <div class="bemerk-text">${esc(b.text)}</div>
+    </div>`).join('');
+}
+
+async function saveBemerkung() {
+  const kuerzel = document.getElementById('bemerk-kuerzel').value.trim().toUpperCase();
+  const schicht = document.getElementById('bemerk-schicht').value;
+  const text    = document.getElementById('bemerk-text').value.trim();
+  if (!kuerzel || !text) {
+    if (!kuerzel) document.getElementById('bemerk-kuerzel').focus();
+    else document.getElementById('bemerk-text').focus();
+    return;
+  }
+  try {
+    const r = await fetch('/api/bemerkung/speichern', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ kuerzel, schicht, text })
+    });
+    const data = await r.json();
+    if (data.ok) {
+      bemerkungen.push(data.eintrag);
+      renderBemerkungen();
+      document.getElementById('bemerk-text').value = '';
+    }
+  } catch(e) {}
+}
+
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ── Init ──────────────────────────────────────────────────
+loadSignoffs();
+loadBemerkungen();
+</script>
+{% endblock %}

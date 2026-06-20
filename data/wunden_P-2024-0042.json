@@ -1,0 +1,54 @@
+[
+  {
+    "id": "w1",
+    "typ": "Tracheostomawunde",
+    "lokalisation": "Trachea anterior, zervikaler Bereich",
+    "erstbefund": "2022-11-01",
+    "aktueller_status": "gruen",
+    "zusammenfassung": "Tracheostoma seit 11/2022. Reizlos, regelgerecht verheilt. Regelmäßige Pflege und Kontrolle.",
+    "verlauf": [
+      {
+        "id": "wv1",
+        "datum": "2026-06-20",
+        "groesse": "",
+        "wundgrund": "epithelialisiert",
+        "exsudat": "kein",
+        "umgebung": "reizlos",
+        "behandlung": "Stomareinigung NaCl 0,9%, sterile Kompressen, TK-Kragen gewechselt",
+        "status": "gruen",
+        "kuerzel": "AQ"
+      },
+      {
+        "id": "wv2",
+        "datum": "2026-06-13",
+        "groesse": "",
+        "wundgrund": "epithelialisiert",
+        "exsudat": "gering serös",
+        "umgebung": "leichte Rötung perifokal",
+        "behandlung": "Stomareinigung NaCl 0,9%, Betaisodona-Tupfer, TK-Kragen gewechselt. Dr. Hoffmann informiert.",
+        "status": "gelb",
+        "kuerzel": "SK"
+      },
+      {
+        "id": "wv3",
+        "datum": "2026-06-06",
+        "groesse": "",
+        "wundgrund": "epithelialisiert",
+        "exsudat": "kein",
+        "umgebung": "reizlos",
+        "behandlung": "Routinepflege",
+        "status": "gruen",
+        "kuerzel": "AQ"
+      }
+    ]
+  },
+  {
+    "id": "w2_1781976620",
+    "typ": "Dekubitus",
+    "lokalisation": "Sakrum",
+    "erstbefund": "2026-06-20",
+    "aktueller_status": "gelb",
+    "zusammenfassung": "",
+    "verlauf": []
+  }
+]

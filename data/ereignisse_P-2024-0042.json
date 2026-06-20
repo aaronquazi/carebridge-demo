@@ -1,0 +1,53 @@
+[
+  {
+    "id": "er1",
+    "typ": "Beatmungszwischenfall",
+    "datum": "2026-06-18",
+    "uhrzeit": "14:22",
+    "ort": "Zimmer 3",
+    "beschreibung": "Beatmungsalarm: Leckage plötzlich auf 38 L/min angestiegen. SpO₂-Abfall auf 88%. Patient unruhig, Beatmungsgerät zeigte Diskonnektions-Alarm.",
+    "sofortmassnahmen": "Überprüfung aller Beatmungsschläuche. TK-Kragen war leicht verrutscht — Neupositionierung. O₂ auf 4 L/min erhöht. SpO₂ stieg innerhalb 3 Min. wieder auf 94%.",
+    "arzt_informiert": true,
+    "arzt_wer": "Dr. Hoffmann",
+    "arzt_wann": "14:25",
+    "angehoerige_informiert": false,
+    "angehoerige_wer": "",
+    "angehoerige_wann": "",
+    "folgemassnahmen": "TK-Fixierung überprüft und Kragen neu angelegt. Beatmungsschläuche kontrolliert — einwandfrei. Engmaschige Vitalzeichen für 2 Stunden. Bericht an nächste Schicht.",
+    "kuerzel": "AQ"
+  },
+  {
+    "id": "er2",
+    "typ": "Arzt informiert",
+    "datum": "2026-06-19",
+    "uhrzeit": "09:10",
+    "ort": "Dienstzimmer",
+    "beschreibung": "Telefonische Information an Dr. Hoffmann über zunehmende Sekretmenge seit 48 Stunden. Sekret weißlich-gelblich, zähe Konsistenz, 3–4x täglich absaugpflichtig.",
+    "sofortmassnahmen": "Inhalation NaCl 0,9% auf 4x täglich erhöht. Erhöhte Flüssigkeitszufuhr sichergestellt.",
+    "arzt_informiert": true,
+    "arzt_wer": "Dr. Hoffmann",
+    "arzt_wann": "09:10",
+    "angehoerige_informiert": false,
+    "angehoerige_wer": "",
+    "angehoerige_wann": "",
+    "folgemassnahmen": "Laborentnahme für Montag angeordnet. Vitalzeichen alle 2 Stunden. Bei Temperaturerhöhung oder SpO₂ < 92% sofort kontaktieren.",
+    "kuerzel": "AQ"
+  },
+  {
+    "id": "er3_1781976620",
+    "typ": "Sonstiges",
+    "datum": "2026-06-20",
+    "uhrzeit": "10:00",
+    "ort": "",
+    "beschreibung": "Test",
+    "sofortmassnahmen": "",
+    "arzt_informiert": false,
+    "arzt_wer": "",
+    "arzt_wann": "",
+    "angehoerige_informiert": false,
+    "angehoerige_wer": "",
+    "angehoerige_wann": "",
+    "folgemassnahmen": "",
+    "kuerzel": "AQ"
+  }
+]
