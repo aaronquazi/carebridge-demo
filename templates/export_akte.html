@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Patientenakte — {{ patient.name }}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Serif:ital,wght@0,400;1,300&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ink: #0F1923; --ink-2: #4A5568; --ink-3: #8A9BB0;
+      --blue: #1A56DB; --green: #0D7A5C; --red: #C0392B; --amber: #B45309;
+      --border: #DDE1E7; --bg: #F0F2F5;
+      --sans: 'IBM Plex Sans', sans-serif;
+      --mono: 'IBM Plex Mono', monospace;
+      --serif: 'IBM Plex Serif', serif;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--sans);
+      font-size: 14px;
+      color: var(--ink);
+      background: var(--bg);
+    }
+
+    /* SCREEN-ONLY controls */
+    .screen-only {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 28px;
+      background: #0F1923;
+      position: sticky; top: 0; z-index: 100;
+    }
+    .screen-logo {
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: 18px;
+      color: #fff;
+      flex: 1;
+    }
+    .btn-print {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 10px 22px;
+      background: var(--blue); color: #fff;
+      border: none; border-radius: 6px; cursor: pointer;
+      font-size: 14px; font-weight: 600; font-family: var(--sans);
+      transition: background 0.15s;
+      text-decoration: none;
+    }
+    .btn-print:hover { background: #2563eb; }
+    .btn-back {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 8px 16px;
+      background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.7);
+      border: 1px solid rgba(255,255,255,0.2); border-radius: 6px;
+      text-decoration: none; font-size: 13px;
+      transition: background 0.15s;
+    }
+    .btn-back:hover { background: rgba(255,255,255,0.15); color: #fff; }
+    .warn-hint {
+      background: #FEF3C7; border: 1px solid #FCD34D; border-radius: 4px;
+      padding: 6px 14px; font-size: 12px; color: #B45309;
+    }
+
+    /* DOCUMENT PAGES */
+    .akte-wrap {
+      max-width: 820px;
+      margin: 24px auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .page {
+      background: #fff;
+      border: 1px solid var(--border);
+      margin-bottom: 8px;
+      padding: 40px 48px;
+      position: relative;
+      min-height: 1050px;
+    }
+
+    /* Page header (repeated on each page in print) */
+    .page-header {
+      display: flex; align-items: flex-end;
+      justify-content: space-between;
+      padding-bottom: 10px;
+      border-bottom: 2px solid var(--ink);
+      margin-bottom: 28px;
+    }
+    .page-header-logo {
+      font-family: var(--serif); font-style: italic;
+      font-size: 22px; color: var(--ink);
+    }
+    .page-header-meta {
+      font-size: 11px; color: var(--ink-3); text-align: right; line-height: 1.6;
+    }
+
+    /* Page footer */
+    .page-footer {
+      position: absolute; bottom: 24px; left: 48px; right: 48px;
+      border-top: 1px solid var(--border);
+      padding-top: 8px;
+      display: flex; justify-content: space-between;
+      font-size: 10px; color: var(--ink-3);
+    }
+
+    /* DECKBLATT */
+    .cover-center {
+      text-align: center;
+      padding: 60px 0 40px;
+    }
+    .cover-logo {
+      font-family: var(--serif); font-style: italic;
+      font-size: 48px; color: var(--ink); margin-bottom: 8px;
+    }
+    .cover-badge {
+      display: inline-block;
+      background: var(--ink); color: #fff;
+      font-size: 11px; font-weight: 600; letter-spacing: 2px;
+      text-transform: uppercase; padding: 6px 18px; border-radius: 3px;
+      margin-bottom: 48px;
+    }
+    .cover-patient-box {
+      background: #F7F8FA; border: 1px solid var(--border);
+      border-radius: 8px; padding: 28px 32px;
+      text-align: left; margin-bottom: 32px;
+    }
+    .cover-patient-label {
+      font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px;
+      color: var(--ink-3); margin-bottom: 16px;
+    }
+    .cover-patient-name {
+      font-size: 26px; font-weight: 600; color: var(--ink); margin-bottom: 12px;
+    }
+    .cover-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 12px 24px;
+    }
+    .cover-kv { display: flex; flex-direction: column; }
+    .cover-kv-label { font-size: 11px; color: var(--ink-3); margin-bottom: 2px; }
+    .cover-kv-val { font-size: 13px; font-weight: 500; color: var(--ink); }
+    .cover-warn {
+      border: 2px solid var(--red);
+      border-radius: 6px; padding: 16px 20px;
+      background: #FFF5F5;
+    }
+    .cover-warn-title {
+      font-weight: 700; color: var(--red); font-size: 13px; margin-bottom: 4px;
+    }
+    .cover-warn-text { font-size: 12px; color: #7B2D2D; line-height: 1.5; }
+    .cover-meta { margin-top: 20px; font-size: 11px; color: var(--ink-3); text-align: center; }
+
+    /* SECTION HEADERS */
+    .section-title {
+      font-size: 16px; font-weight: 600; color: var(--ink);
+      border-bottom: 2px solid var(--blue);
+      padding-bottom: 6px; margin-bottom: 20px;
+      display: flex; align-items: center; gap: 8px;
+    }
+
+    /* TABLE */
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    thead th {
+      text-align: left; font-size: 10px; text-transform: uppercase;
+      letter-spacing: 0.7px; color: var(--ink-3); font-weight: 500;
+      padding: 7px 10px; background: #F7F8FA;
+      border-bottom: 1px solid var(--border);
+    }
+    tbody tr { border-bottom: 1px solid #F0F2F5; }
+    tbody tr:last-child { border-bottom: none; }
+    td { padding: 8px 10px; color: var(--ink); vertical-align: top; }
+    td.mono { font-family: var(--mono); }
+    .btm-badge {
+      display: inline-block; background: #FEE2E2; color: #C0392B;
+      font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 3px;
+    }
+
+    /* KV BOX */
+    .kv-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 0; margin-bottom: 20px; }
+    .kv-row { display: contents; }
+    .kv-k { padding: 7px 0; font-size: 12px; color: var(--ink-3); border-bottom: 1px solid #F0F2F5; }
+    .kv-v { padding: 7px 0; font-size: 12px; font-weight: 500; color: var(--ink); border-bottom: 1px solid #F0F2F5; text-align: right; }
+
+    /* PARAM GRID */
+    .param-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 18px; }
+    .param-card {
+      background: #F7F8FA; border: 1px solid var(--border);
+      border-radius: 6px; padding: 10px 14px;
+    }
+    .param-label { font-size: 10px; color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 4px; }
+    .param-val { font-family: var(--mono); font-size: 18px; font-weight: 500; color: var(--blue); }
+    .param-sub { font-size: 10px; color: var(--ink-3); margin-top: 2px; }
+
+    /* ALARM GRID */
+    .alarm-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    .alarm-item { background: #FEF3C7; border: 1px solid #FCD34D; border-radius: 4px; padding: 8px 12px; }
+    .alarm-key { font-size: 10px; color: #B45309; font-weight: 600; margin-bottom: 2px; }
+    .alarm-val { font-family: var(--mono); font-size: 13px; color: #0F1923; }
+
+    /* PFLEGEBERICHT */
+    .pb-entry { border-left: 3px solid var(--blue); padding: 10px 14px; margin-bottom: 10px; background: #F7F8FA; border-radius: 0 4px 4px 0; }
+    .pb-meta { font-size: 11px; color: var(--ink-3); margin-bottom: 4px; }
+    .pb-text { font-size: 12px; color: var(--ink); line-height: 1.5; }
+
+    /* NOTFALLPLAN */
+    .notfall-box {
+      border: 2px solid var(--red); border-radius: 6px;
+      overflow: hidden; margin-bottom: 16px;
+    }
+    .notfall-head {
+      background: var(--red); color: #fff;
+      padding: 10px 16px; font-weight: 700; font-size: 13px;
+    }
+    .notfall-body { padding: 14px 16px; }
+    .notfall-steps { list-style: none; padding: 0; }
+    .notfall-steps li {
+      padding: 6px 0; border-bottom: 1px solid #F0F2F5;
+      font-size: 12px; display: flex; gap: 10px; align-items: flex-start;
+    }
+    .notfall-steps li:last-child { border-bottom: none; }
+    .step-num {
+      min-width: 20px; height: 20px; border-radius: 50%;
+      background: var(--red); color: #fff;
+      font-size: 10px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+
+    /* PRINT */
+    @media print {
+      @page {
+        size: A4 portrait;
+        margin: 15mm 18mm 18mm 18mm;
+      }
+      body { background: #fff; font-size: 11px; }
+      .screen-only { display: none !important; }
+      .akte-wrap { max-width: none; margin: 0; }
+      .page {
+        border: none; margin: 0; padding: 0;
+        min-height: auto;
+        page-break-after: always;
+        print-color-adjust: exact;
+        -webkit-print-color-adjust: exact;
+      }
+      .page:last-child { page-break-after: avoid; }
+      .page-header { margin-bottom: 16px; }
+      .page-footer { position: static; margin-top: 20px; border-top: 1px solid #ccc; padding-top: 6px; }
+      .cover-center { padding: 20px 0 20px; }
+      .cover-logo { font-size: 36px; }
+      .param-val { font-size: 15px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- SCREEN CONTROLS -->
+<div class="screen-only">
+  <div class="screen-logo">CareBridge — Patientenakte Export</div>
+  <div class="warn-hint">⚠ Demo-Projekt · Keine Echtdaten · Kein Medizinprodukt</div>
+  <a href="/arztuebergabe" class="btn-back">← Zurück</a>
+  <button onclick="window.print()" class="btn-print">
+    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+    Als PDF speichern / Drucken
+  </button>
+</div>
+
+<div class="akte-wrap">
+
+  <!-- ══ SEITE 1 — DECKBLATT ══ -->
+  <div class="page">
+    <div class="page-header">
+      <div class="page-header-logo">CareBridge</div>
+      <div class="page-header-meta">
+        Patientenakte · {{ heute_str }}<br>
+        {{ patient.station }}
+      </div>
+    </div>
+
+    <div class="cover-center">
+      <div class="cover-logo">CareBridge</div>
+      <div class="cover-badge">Patientenakte — Export</div>
+    </div>
+
+    <div class="cover-patient-box">
+      <div class="cover-patient-label">Patientendaten</div>
+      <div class="cover-patient-name">{{ patient.name }}</div>
+      <div class="cover-grid">
+        <div class="cover-kv">
+          <div class="cover-kv-label">Geburtsdatum</div>
+          <div class="cover-kv-val">{{ patient.geburtsdatum }}</div>
+        </div>
+        <div class="cover-kv">
+          <div class="cover-kv-label">Alter</div>
+          <div class="cover-kv-val">{{ patient.alter }} Jahre</div>
+        </div>
+        <div class="cover-kv">
+          <div class="cover-kv-label">Diagnose</div>
+          <div class="cover-kv-val">{{ patient.diagnose }}</div>
+        </div>
+        <div class="cover-kv">
+          <div class="cover-kv-label">Zimmer</div>
+          <div class="cover-kv-val">{{ patient.zimmer }}</div>
+        </div>
+        <div class="cover-kv">
+          <div class="cover-kv-label">Station</div>
+          <div class="cover-kv-val">{{ patient.station }}</div>
+        </div>
+        <div class="cover-kv">
+          <div class="cover-kv-label">Behandelnder Arzt</div>
+          <div class="cover-kv-val">{{ patient.arzt }}</div>
+        </div>
+        <div class="cover-kv">
+          <div class="cover-kv-label">Beatmungsgerät</div>
+          <div class="cover-kv-val">{{ patient.beatmungsgeraet }}</div>
+        </div>
+        <div class="cover-kv">
+          <div class="cover-kv-label">Notfallkontakt</div>
+          <div class="cover-kv-val">{{ patient.notfallkontakt }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cover-warn">
+      <div class="cover-warn-title">⚠ Vertraulich — Patientendaten</div>
+      <div class="cover-warn-text">
+        Dieses Dokument enthält vertrauliche Patientendaten. Es ist ausschließlich für autorisierte
+        Personen bestimmt. Weitergabe, Vervielfältigung und unbefugter Zugriff sind nicht gestattet.
+        Aufbewahrung und Vernichtung gemäß DSGVO / KDG.
+      </div>
+    </div>
+
+    <div class="cover-meta">
+      Erstellt am {{ heute_str }} · {{ patient.pflegeleitung }}
+    </div>
+
+    <div class="page-footer">
+      <span>CareBridge Demo · Aaron Quazi · Kein Medizinprodukt</span>
+      <span>{{ patient.name }} · {{ heute_str }}</span>
+      <span>Seite 1</span>
+    </div>
+  </div>
+
+  <!-- ══ SEITE 2 — BEATMUNGSVERORDNUNG ══ -->
+  <div class="page">
+    <div class="page-header">
+      <div class="page-header-logo">CareBridge</div>
+      <div class="page-header-meta">
+        {{ patient.name }} · {{ patient.id }}<br>
+        {{ heute_str }}
+      </div>
+    </div>
+
+    <div class="section-title">
+      🫁 Beatmungsverordnung
+    </div>
+
+    <div class="kv-2col">
+      <div class="kv-row"><div class="kv-k">Verordnet von</div><div class="kv-v">{{ verordnung.verordnet_von }}</div></div>
+      <div class="kv-row"><div class="kv-k">Verordnungsdatum</div><div class="kv-v">{{ verordnung.datum }}</div></div>
+      <div class="kv-row"><div class="kv-k">Gültig bis</div><div class="kv-v">{{ verordnung.gueltig_bis }}</div></div>
+      <div class="kv-row"><div class="kv-k">Gerät</div><div class="kv-v">{{ verordnung.geraet }}</div></div>
+      <div class="kv-row"><div class="kv-k">Beatmungsmodus</div><div class="kv-v">{{ verordnung.modus }}</div></div>
+    </div>
+
+    <h3 style="font-size:12px;font-weight:600;color:var(--ink-2);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.5px">Beatmungsparameter</h3>
+    <div class="param-grid" style="margin-bottom:20px">
+      {% for k, v in verordnung.parameter.items() %}
+      <div class="param-card">
+        <div class="param-label">{{ k }}</div>
+        <div class="param-val" style="font-size:15px">{{ v }}</div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <h3 style="font-size:12px;font-weight:600;color:var(--ink-2);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.5px">Alarmgrenzen</h3>
+    <div class="alarm-grid" style="margin-bottom:20px">
+      {% for k, v in verordnung.alarmgrenzen.items() %}
+      <div class="alarm-item">
+        <div class="alarm-key">{{ k }}</div>
+        <div class="alarm-val">{{ v }}</div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <h3 style="font-size:12px;font-weight:600;color:var(--ink-2);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.5px">Trachealkanüle</h3>
+    <div class="kv-2col" style="margin-bottom:16px">
+      {% set tk = verordnung['trachealkanüle'] %}
+      <div class="kv-row"><div class="kv-k">Typ / Größe</div><div class="kv-v">{{ tk.typ }} · {{ tk.groesse }}</div></div>
+      <div class="kv-row"><div class="kv-k">Letzter Wechsel</div><div class="kv-v">{{ tk.letzter_wechsel }}</div></div>
+      <div class="kv-row"><div class="kv-k">Nächster Wechsel</div><div class="kv-v">{{ tk.naechster_wechsel }}</div></div>
+      <div class="kv-row"><div class="kv-k">Cuffdruck (Soll)</div><div class="kv-v">{{ tk.cuffdruck_soll }}</div></div>
+    </div>
+
+    {% if verordnung.o2_gabe %}
+    <h3 style="font-size:12px;font-weight:600;color:var(--ink-2);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.5px">O₂-Therapie</h3>
+    <div class="kv-2col">
+      <div class="kv-row"><div class="kv-k">Soll-Flow</div><div class="kv-v">{{ verordnung.o2_gabe.soll }}</div></div>
+      <div class="kv-row"><div class="kv-k">Bedarfsflow</div><div class="kv-v">{{ verordnung.o2_gabe.bedarf }}</div></div>
+      <div class="kv-row"><div class="kv-k">Gerät</div><div class="kv-v">{{ verordnung.o2_gabe.geraet }}</div></div>
+      <div class="kv-row"><div class="kv-k">Hinweis</div><div class="kv-v">{{ verordnung.o2_gabe.hinweis }}</div></div>
+    </div>
+    {% endif %}
+
+    <div class="page-footer">
+      <span>CareBridge Demo · Aaron Quazi · Kein Medizinprodukt</span>
+      <span>{{ patient.name }} · {{ heute_str }}</span>
+      <span>Seite 2</span>
+    </div>
+  </div>
+
+  <!-- ══ SEITE 3 — MEDIKAMENTENPLAN ══ -->
+  <div class="page">
+    <div class="page-header">
+      <div class="page-header-logo">CareBridge</div>
+      <div class="page-header-meta">
+        {{ patient.name }} · {{ patient.id }}<br>
+        {{ heute_str }}
+      </div>
+    </div>
+
+    <div class="section-title">💊 Medikamentenplan</div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Medikament</th>
+            <th>Dosierung</th>
+            <th>Form</th>
+            <th>Zeiten</th>
+            <th>Indikation</th>
+            <th>Besonderheiten</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for m in medikamente %}
+          <tr>
+            <td>
+              <strong>{{ m.name }}</strong>
+              {% if m.get('btm') %}<br><span class="btm-badge">BTM</span>{% endif %}
+            </td>
+            <td class="mono">{{ m.dosierung }}</td>
+            <td>{{ m.form }}</td>
+            <td class="mono" style="white-space:nowrap">{{ m.zeiten | join(', ') }}</td>
+            <td style="font-size:11px">{{ m.grund }}</td>
+            <td style="font-size:11px">
+              {% if m.nuechtern %}<strong style="color:var(--amber)">Nüchtern!</strong> {% endif %}
+              {{ m.besonderheiten or '—' }}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div style="margin-top:16px;background:#FEE2E2;border:1px solid #FCA5A5;border-radius:4px;padding:10px 14px;font-size:11px;color:var(--red)">
+      <strong>BTM-Hinweis:</strong> BTM-pflichtige Medikamente erfordern Vier-Augen-Prinzip bei Entnahme und Gabe. Restmengen dokumentieren.
+    </div>
+
+    <div class="page-footer">
+      <span>CareBridge Demo · Aaron Quazi · Kein Medizinprodukt</span>
+      <span>{{ patient.name }} · {{ heute_str }}</span>
+      <span>Seite 3</span>
+    </div>
+  </div>
+
+  <!-- ══ SEITE 4 — AKTUELLE VITALWERTE ══ -->
+  <div class="page">
+    <div class="page-header">
+      <div class="page-header-logo">CareBridge</div>
+      <div class="page-header-meta">
+        {{ patient.name }} · {{ patient.id }}<br>
+        {{ heute_str }}
+      </div>
+    </div>
+
+    <div class="section-title">📊 Aktuelle Vitalwerte (letzte 24 h)</div>
+
+    {% if kurve_zeilen %}
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Uhrzeit</th>
+            <th>SpO₂ (%)</th>
+            <th>HF (/min)</th>
+            <th>BD sys/dia</th>
+            <th>AF (/min)</th>
+            <th>Vt (ml)</th>
+            <th>Leckage (L/min)</th>
+            <th>IPAP / EPAP</th>
+            <th>Lagerung</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for z in kurve_zeilen %}
+          <tr>
+            <td class="mono">{{ z.uhrzeit }}</td>
+            <td class="mono {% if z.spo2 and z.spo2|int < 90 %}style="color:var(--red);font-weight:700"{% endif %}">{{ z.spo2 or '—' }}</td>
+            <td class="mono">{{ z.hf or '—' }}</td>
+            <td class="mono">{% if z.bd_sys and z.bd_dia %}{{ z.bd_sys }}/{{ z.bd_dia }}{% else %}—{% endif %}</td>
+            <td class="mono">{{ z.af or '—' }}</td>
+            <td class="mono">{{ z.vt or '—' }}</td>
+            <td class="mono">{{ z.leckage or '—' }}</td>
+            <td class="mono">{% if z.ipap and z.epap %}{{ z.ipap }}/{{ z.epap }}{% else %}—{% endif %}</td>
+            <td style="font-size:11px">{{ z.lagerung or '—' }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div style="padding:24px;background:#F7F8FA;border:1px solid var(--border);border-radius:6px;text-align:center;color:var(--ink-3);font-size:12px">
+      Keine Kurvendaten für heute eingetragen.
+    </div>
+    {% endif %}
+
+    <div class="page-footer">
+      <span>CareBridge Demo · Aaron Quazi · Kein Medizinprodukt</span>
+      <span>{{ patient.name }} · {{ heute_str }}</span>
+      <span>Seite 4</span>
+    </div>
+  </div>
+
+  <!-- ══ SEITE 5 — PFLEGEBERICHT ══ -->
+  <div class="page">
+    <div class="page-header">
+      <div class="page-header-logo">CareBridge</div>
+      <div class="page-header-meta">
+        {{ patient.name }} · {{ patient.id }}<br>
+        {{ heute_str }}
+      </div>
+    </div>
+
+    <div class="section-title">📝 Pflegebericht (letzte 7 Tage)</div>
+
+    {% if pflegebericht %}
+      {% for e in pflegebericht %}
+      <div class="pb-entry">
+        <div class="pb-meta">
+          {{ e.datum }} {{ e.uhrzeit }} · {{ e.kuerzel }} · {{ e.schicht }}
+          {% if e.kategorie %} · <em>{{ e.kategorie }}</em>{% endif %}
+        </div>
+        <div class="pb-text">{{ e.text }}</div>
+        {% if e.schmerz_nrs is defined and e.schmerz_nrs %}
+        <div style="margin-top:4px;font-size:11px;color:var(--amber)">
+          Schmerzintensität: NRS {{ e.schmerz_nrs }}/10{% if e.schmerz_lokalisation %} · {{ e.schmerz_lokalisation }}{% endif %}
+        </div>
+        {% endif %}
+      </div>
+      {% endfor %}
+    {% else %}
+    <div style="padding:24px;background:#F7F8FA;border:1px solid var(--border);border-radius:6px;text-align:center;color:var(--ink-3);font-size:12px">
+      Keine Pflegebericht-Einträge vorhanden.
+    </div>
+    {% endif %}
+
+    <div class="page-footer">
+      <span>CareBridge Demo · Aaron Quazi · Kein Medizinprodukt</span>
+      <span>{{ patient.name }} · {{ heute_str }}</span>
+      <span>Seite 5</span>
+    </div>
+  </div>
+
+  <!-- ══ SEITE 6 — NOTFALLPLAN ══ -->
+  <div class="page">
+    <div class="page-header">
+      <div class="page-header-logo">CareBridge</div>
+      <div class="page-header-meta">
+        {{ patient.name }} · {{ patient.id }}<br>
+        {{ heute_str }}
+      </div>
+    </div>
+
+    <div class="section-title">🚨 Notfallplan</div>
+
+    <div class="notfall-box">
+      <div class="notfall-head">Atemnotfall / Beatmungsversagen</div>
+      <div class="notfall-body">
+        <ul class="notfall-steps">
+          <li><span class="step-num">1</span> Patienten ansprechen und Bewusstseinslage prüfen</li>
+          <li><span class="step-num">2</span> Beatmungsgerät prüfen — Masken-/Kanülensitz, Schlauchsystem, Alarm-Ursache</li>
+          <li><span class="step-num">3</span> SpO₂ messen — bei SpO₂ &lt; 85% sofort Notarzt (112) rufen</li>
+          <li><span class="step-num">4</span> O₂-Gabe bis {{ verordnung.o2_gabe.bedarf if verordnung.o2_gabe else '4 L/min' }} gemäß Verordnung</li>
+          <li><span class="step-num">5</span> Trachealkanüle auf Durchgängigkeit prüfen — ggf. absaugen</li>
+          <li><span class="step-num">6</span> Cuffdruck kontrollieren (Soll: {{ verordnung['trachealkanüle'].cuffdruck_soll if verordnung.get('trachealkanüle') else '20–25 cmH₂O' }})</li>
+          <li><span class="step-num">7</span> Arzt {{ patient.arzt }} informieren</li>
+          <li><span class="step-num">8</span> Pflegeleitung {{ patient.pflegeleitung }} benachrichtigen</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="notfall-box">
+      <div class="notfall-head" style="background:#B45309">Notfallkontakte</div>
+      <div class="notfall-body">
+        <div class="kv-2col">
+          <div class="kv-row"><div class="kv-k">Notarzt</div><div class="kv-v">112</div></div>
+          <div class="kv-row"><div class="kv-k">Hausarzt / Neurologe</div><div class="kv-v">{{ patient.arzt }}</div></div>
+          <div class="kv-row"><div class="kv-k">Pflegeleitung</div><div class="kv-v">{{ patient.pflegeleitung }}</div></div>
+          <div class="kv-row"><div class="kv-k">Notfallkontakt Patient</div><div class="kv-v">{{ patient.notfallkontakt }}</div></div>
+          <div class="kv-row"><div class="kv-k">Gerätehersteller Hotline</div><div class="kv-v">ResMed Service 0800 7376 633</div></div>
+          <div class="kv-row"><div class="kv-k">Sauerstofflieferant</div><div class="kv-v">Linde Gas 0800 5463 463</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div style="background:var(--green-light);border:1px solid #A7E3D3;border-radius:6px;padding:12px 16px;font-size:12px;color:var(--green)">
+      <strong>Beatmungsgerät:</strong> {{ patient.beatmungsgeraet }} ·
+      Beatmung seit {{ patient.beatmungspflichtig_seit }} ·
+      Modus: {{ verordnung.modus }}
+    </div>
+
+    <div class="page-footer">
+      <span>CareBridge Demo · Aaron Quazi · Kein Medizinprodukt</span>
+      <span>{{ patient.name }} · {{ heute_str }}</span>
+      <span>Seite 6</span>
+    </div>
+  </div>
+
+</div><!-- /akte-wrap -->
+</body>
+</html>

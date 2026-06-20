@@ -582,6 +582,174 @@
     }
 
     .patient-dropdown-footer a:hover { text-decoration: underline; }
+
+    /* ── DARK MODE ── */
+    body.dark-mode {
+      --bg:          #0F1923;
+      --surface:     #1A2535;
+      --surface-2:   #1E2D40;
+      --border:      #2A3A50;
+      --border-soft: #243348;
+      --ink:         #E8EDF5;
+      --ink-2:       #A8B8CC;
+      --ink-3:       #5A7A9A;
+    }
+
+    /* Nav bleibt im Dunkelmodus unverändert */
+    body.dark-mode .nav {
+      background: #0F1923 !important;
+    }
+    body.dark-mode .nav-brand-name { color: #fff !important; }
+    body.dark-mode .nav-brand-sub  { color: #8A9BB0 !important; }
+    body.dark-mode .nav-patient-name { color: #fff !important; }
+    body.dark-mode .nav-patient-id   { color: #8A9BB0 !important; }
+    body.dark-mode .nav-patient-label { color: #8A9BB0 !important; }
+    body.dark-mode .nav-section-label { color: #8A9BB0 !important; }
+    body.dark-mode .nav-link {
+      color: rgba(255,255,255,0.65) !important;
+      background: transparent !important;
+    }
+    body.dark-mode .nav-link:hover {
+      color: #fff !important;
+      background: rgba(255,255,255,0.06) !important;
+    }
+    body.dark-mode .nav-link.aktiv {
+      color: #fff !important;
+      background: rgba(26,86,219,0.25) !important;
+    }
+    body.dark-mode .nav-demo-badge {
+      background: rgba(180,83,9,0.2) !important;
+      border-color: rgba(180,83,9,0.4) !important;
+      color: #FCD34D !important;
+    }
+
+    body.dark-mode .modal-input,
+    body.dark-mode input,
+    body.dark-mode select,
+    body.dark-mode textarea {
+      background: var(--surface-2);
+      color: var(--ink);
+      border-color: var(--border);
+    }
+    body.dark-mode .modal-box,
+    body.dark-mode .splash-box { background: var(--surface); }
+
+    .theme-btn {
+      width: 30px; height: 30px; border-radius: 50%;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--ink-3);
+      font-size: 14px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s; flex-shrink: 0;
+    }
+    .theme-btn:hover { border-color: var(--blue); background: var(--blue-light); }
+
+    /* ── SUCHE ── */
+    .search-wrap { position: relative; }
+    .search-input {
+      height: 32px; width: 180px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 0 10px 0 30px;
+      font-size: 12px; font-family: var(--sans);
+      background: var(--surface); color: var(--ink);
+      transition: width 0.2s, border-color 0.15s;
+    }
+    .search-input:focus {
+      outline: none; border-color: var(--blue);
+      width: 220px;
+    }
+    .search-icon {
+      position: absolute; left: 9px; top: 50%; transform: translateY(-50%);
+      width: 14px; height: 14px; color: var(--ink-3); pointer-events: none;
+    }
+    .search-dropdown {
+      position: absolute; top: calc(100% + 6px); left: 0;
+      width: 280px; background: var(--surface);
+      border: 1px solid var(--border); border-radius: var(--radius);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+      z-index: 300; display: none; overflow: hidden;
+    }
+    .search-dropdown.open { display: block; }
+    .search-result {
+      display: flex; align-items: center; gap: 10px;
+      padding: 9px 14px; text-decoration: none;
+      color: var(--ink); font-size: 13px;
+      transition: background 0.1s; border-bottom: 1px solid var(--border-soft);
+    }
+    .search-result:last-child { border-bottom: none; }
+    .search-result:hover { background: var(--surface-2); }
+    .search-result-icon { font-size: 14px; flex-shrink: 0; }
+    .search-result-label { font-weight: 500; }
+    .search-result-sub { font-size: 11px; color: var(--ink-3); }
+    .search-empty { padding: 12px 14px; font-size: 12px; color: var(--ink-3); }
+
+    /* ── HELP BUTTON ── */
+    .help-btn {
+      width: 30px; height: 30px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--ink-3);
+      font-size: 14px;
+      font-weight: 600;
+      font-family: var(--mono);
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s;
+      flex-shrink: 0;
+    }
+    .help-btn:hover { border-color: var(--blue); color: var(--blue); background: var(--blue-light); }
+
+    /* ── HELP OVERLAY ── */
+    .help-overlay {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(15,25,35,0.6);
+      z-index: 500;
+      align-items: center; justify-content: center;
+    }
+    .help-overlay.open { display: flex; }
+    .help-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 28px 32px;
+      max-width: 380px;
+      width: 90%;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.2);
+    }
+    .help-box h3 {
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: 20px;
+      color: var(--ink);
+      margin-bottom: 4px;
+    }
+    .help-box .help-sub {
+      font-size: 12px; color: var(--ink-3); margin-bottom: 20px;
+    }
+    .help-nav-list { list-style: none; padding: 0; margin-bottom: 20px; }
+    .help-nav-list li {
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border-soft);
+      font-size: 13px;
+      display: flex; gap: 10px;
+    }
+    .help-nav-list li:last-child { border-bottom: none; }
+    .help-nav-list li a { color: var(--blue); text-decoration: none; font-weight: 500; }
+    .help-nav-list li a:hover { text-decoration: underline; }
+    .help-nav-list li span { color: var(--ink-3); font-size: 12px; }
+    .help-close-btn {
+      width: 100%; padding: 10px;
+      background: var(--surface-2); border: 1px solid var(--border);
+      border-radius: var(--radius); cursor: pointer;
+      font-size: 13px; color: var(--ink-2);
+      font-family: var(--sans);
+      transition: background 0.1s;
+    }
+    .help-close-btn:hover { background: var(--border); }
   </style>
 </head>
 <body>
@@ -617,12 +785,6 @@
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
       </svg>
       Qualitätsdashboard
-    </a>
-    <a href="/fhir" class="nav-link {% if aktiv == 'fhir' %}aktiv{% endif %}">
-      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/>
-      </svg>
-      FHIR Vorschau
     </a>
     <a href="/uebergabe" class="nav-link {% if aktiv == 'uebergabe' %}aktiv{% endif %}" style="justify-content:space-between">
       <span style="display:flex;align-items:center;gap:10px">
@@ -664,11 +826,14 @@
       </svg>
       Intensivkurve
     </a>
-    <a href="/leistungsnachweis" class="nav-link {% if aktiv == 'leistungsnachweis' %}aktiv{% endif %}">
-      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
-      </svg>
-      Leistungsnachweis
+    <a href="/leistungsnachweis" class="nav-link {% if aktiv == 'leistungsnachweis' %}aktiv{% endif %}" style="justify-content:space-between" id="nav-leistungsnachweis">
+      <span style="display:flex;align-items:center;gap:10px">
+        <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+        </svg>
+        Leistungsnachweis
+      </span>
+      <span id="nav-btm-badge" style="display:none;background:#C0392B;color:#fff;border-radius:50%;width:16px;height:16px;font-size:9px;font-weight:700;align-items:center;justify-content:center;flex-shrink:0">!</span>
     </a>
     <a href="/ereignisse" class="nav-link {% if aktiv == 'ereignisse' %}aktiv{% endif %}">
       <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -710,8 +875,31 @@
       </svg>
       Medikamentenplan
     </a>
-
     <div class="nav-section-label" style="margin-top:8px;">System</div>
+    <a href="/schichtplan" class="nav-link {% if aktiv == 'schichtplan' %}aktiv{% endif %}">
+      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+      </svg>
+      Schichtplan
+    </a>
+    <a href="/export/patientenakte" class="nav-link {% if aktiv == 'export_akte' %}aktiv{% endif %}">
+      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+      </svg>
+      Patientenakte exportieren
+    </a>
+    <a href="/kontakte" class="nav-link {% if aktiv == 'kontakte' %}aktiv{% endif %}">
+      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+      </svg>
+      Kontakte
+    </a>
+    <a href="/fhir" class="nav-link {% if aktiv == 'fhir' %}aktiv{% endif %}">
+      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/>
+      </svg>
+      FHIR Vorschau
+    </a>
     <a href="/admin" class="nav-link {% if aktiv == 'admin' %}aktiv{% endif %}">
       <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
@@ -728,6 +916,41 @@
     <div style="font-size:11px;color:#8A9BB0;margin-top:2px">Pflegefachmann &amp; Healthcare IT</div>
   </div>
 </nav>
+
+<!-- HILFE OVERLAY -->
+<div class="help-overlay" id="helpOverlay" onclick="closeHelpOutside(event)">
+  <div class="help-box">
+    <h3>CareBridge</h3>
+    <div class="help-sub">Erstellt von Aaron Quazi · Pflegefachmann &amp; Healthcare IT</div>
+    <ul class="help-nav-list">
+      <li>
+        <a href="/dashboard">Dashboard</a>
+        <span>Übersicht · Compliance · Nächste Aktionen</span>
+      </li>
+      <li>
+        <a href="/intensivkurve">Intensivkurve</a>
+        <span>Vitalwerte stündlich eintragen</span>
+      </li>
+      <li>
+        <a href="/uebergabe">Übergabe</a>
+        <span>SBAR · Freigabe-Ampel · Schicht abschließen</span>
+      </li>
+      <li>
+        <a href="/leistungsnachweis">Leistungsnachweis</a>
+        <span>Abzeichnen · BTM · Schichtbemerkungen</span>
+      </li>
+      <li>
+        <a href="/export/patientenakte">Patientenakte exportieren</a>
+        <span>Komplette Akte als PDF</span>
+      </li>
+      <li>
+        <a href="/projekt">Über dieses Projekt</a>
+        <span>Projektinfo · Kontakt · Technologie</span>
+      </li>
+    </ul>
+    <button class="help-close-btn" onclick="toggleHelp()">✕ Schließen</button>
+  </div>
+</div>
 
 <div class="main">
   <div class="topbar">
@@ -767,6 +990,16 @@
           </div>
         </div>
       </div>
+      <!-- Suche -->
+      <div class="search-wrap" id="searchWrap">
+        <svg class="search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+        <input class="search-input" id="searchInput" type="text" placeholder="Suchen …" autocomplete="off"
+          oninput="handleSearch(this.value)" onfocus="handleSearch(this.value)" onkeydown="handleSearchKey(event)">
+        <div class="search-dropdown" id="searchDropdown"></div>
+      </div>
+      <!-- Darkmode -->
+      <button class="theme-btn" id="themeBtn" onclick="toggleDarkMode()" title="Dunkelmodus an/aus" type="button">🌙</button>
+      <button class="help-btn" onclick="toggleHelp()" title="Hilfe" type="button">?</button>
       <div class="time-display" id="clock">--:--</div>
     </div>
   </div>
@@ -824,6 +1057,145 @@
       document.getElementById('patientDropdown').classList.remove('open');
     }
   });
+
+  function toggleHelp() {
+    document.getElementById('helpOverlay').classList.toggle('open');
+  }
+  function closeHelpOutside(e) {
+    if (e.target === document.getElementById('helpOverlay')) toggleHelp();
+  }
+
+  // ── DARK MODE ──────────────────────────────────────────────
+  (function() {
+    const saved = localStorage.getItem('darkMode');
+    if (saved === 'true') {
+      document.body.classList.add('dark-mode');
+      const btn = document.getElementById('themeBtn');
+      if (btn) btn.textContent = '☀';
+    }
+  })();
+
+  function toggleDarkMode() {
+    const isDark = document.body.classList.toggle('dark-mode');
+    localStorage.setItem('darkMode', isDark ? 'true' : 'false');
+    document.getElementById('themeBtn').textContent = isDark ? '☀' : '🌙';
+  }
+
+  // ── SUCHE ──────────────────────────────────────────────────
+  const SEARCH_INDEX = [
+    { icon:'📊', label:'Dashboard',                  href:'/dashboard',              keys:'übersicht dokumentation vitalwerte compliance' },
+    { icon:'📋', label:'Intensivkurve',              href:'/intensivkurve',          keys:'vitalwerte beatmung spo2 kurve hf blutdruck' },
+    { icon:'✅', label:'Leistungsnachweis',           href:'/leistungsnachweis',      keys:'leistungen abzeichnen btm pflegeleistungen schicht' },
+    { icon:'📄', label:'Pflegebericht',              href:'/pflegebericht',          keys:'bericht pflege notizen eintraege schmerz' },
+    { icon:'🔄', label:'Übergabe',                   href:'/uebergabe',              keys:'uebergabe sbar schicht abschluss freigabe' },
+    { icon:'🖨',  label:'Arztübergabe',              href:'/arztuebergabe',          keys:'arzt uebergabe verlauf 14 tage druck' },
+    { icon:'📝', label:'SIS',                        href:'/sis',                    keys:'sis strukturierte informationssammlung themenfelder' },
+    { icon:'⚠',  label:'Ereignisse',                href:'/ereignisse',             keys:'ereignisse alarme notfall dokumentation' },
+    { icon:'❤',  label:'Wunddokumentation',         href:'/wunden',                 keys:'wunden tracheostoma versorgung ampel' },
+    { icon:'🫁', label:'Beatmungsverordnung',        href:'/beatmungsverordnung',    keys:'beatmung verordnung ipap epap parameter trachealkanule' },
+    { icon:'💊', label:'Medikamentenplan',           href:'/medikamentenplan',       keys:'medikamente btm plan dosierung zeiten riluzol' },
+    { icon:'📅', label:'Therapien',                  href:'/therapien',              keys:'therapie physiotherapie logopaedie ergo' },
+    { icon:'📁', label:'Protokolle & Dokumente',     href:'/protokolle',             keys:'protokolle arztbriefe befunde dokumente' },
+    { icon:'📊', label:'Qualitätsdashboard',         href:'/qualitaet',              keys:'qualitaet dashboard kennzahlen compliance doku' },
+    { icon:'📞', label:'Kontakte',                   href:'/kontakte',               keys:'kontakte telefon notfall arzt hotline' },
+    { icon:'📅', label:'Schichtplan',                href:'/schichtplan',            keys:'schicht plan dienst frueh spaet nacht' },
+    { icon:'📄', label:'Patientenakte exportieren',  href:'/export/patientenakte',   keys:'export pdf akte drucken' },
+    { icon:'🔗', label:'FHIR Vorschau',              href:'/fhir',                   keys:'fhir hl7 interoperabilitaet export json' },
+    { icon:'⚙',  label:'Administration',            href:'/admin',                  keys:'admin patienten personal konfiguration' },
+    { icon:'ℹ',  label:'Über dieses Projekt',       href:'/projekt',                keys:'projekt info carebridge aaron quazi' },
+  ];
+
+  const PATIENTS = {{ all_patienten | tojson }};
+
+  function searchQuery(q) {
+    if (!q || q.length < 2) return [];
+    const ql = q.toLowerCase();
+    const res = [];
+    for (const p of SEARCH_INDEX) {
+      if (p.label.toLowerCase().includes(ql) || p.keys.includes(ql)) {
+        res.push({ icon: p.icon, label: p.label, sub: null, href: p.href });
+      }
+    }
+    for (const p of PATIENTS) {
+      const haystack = (p.name + ' ' + p.id + ' ' + (p.diagnose_kurz||'')).toLowerCase();
+      if (haystack.includes(ql)) {
+        res.push({ icon: '👤', label: p.name, sub: p.zimmer + ' · ' + p.id, href: '/switch_patient/' + p.id });
+      }
+    }
+    return res.slice(0, 5);
+  }
+
+  let _searchActive = -1;
+
+  function handleSearch(val) {
+    const dd = document.getElementById('searchDropdown');
+    const results = searchQuery(val);
+    _searchActive = -1;
+    if (!val || val.length < 2) {
+      dd.innerHTML = '';
+      dd.classList.remove('open');
+      return;
+    }
+    if (results.length === 0) {
+      dd.innerHTML = '<div class="search-empty">Keine Ergebnisse für „' + _esc(val) + '"</div>';
+    } else {
+      dd.innerHTML = results.map((r, i) =>
+        `<a class="search-result" href="${_esc(r.href)}" data-idx="${i}">
+          <span class="search-result-icon">${r.icon}</span>
+          <div>
+            <div class="search-result-label">${_esc(r.label)}</div>
+            ${r.sub ? `<div class="search-result-sub">${_esc(r.sub)}</div>` : ''}
+          </div>
+        </a>`
+      ).join('');
+    }
+    dd.classList.add('open');
+  }
+
+  function handleSearchKey(e) {
+    const dd = document.getElementById('searchDropdown');
+    const items = dd.querySelectorAll('.search-result');
+    if (e.key === 'ArrowDown') {
+      _searchActive = Math.min(_searchActive + 1, items.length - 1);
+      items.forEach((el, i) => el.style.background = i === _searchActive ? 'var(--surface-2)' : '');
+      e.preventDefault();
+    } else if (e.key === 'ArrowUp') {
+      _searchActive = Math.max(_searchActive - 1, -1);
+      items.forEach((el, i) => el.style.background = i === _searchActive ? 'var(--surface-2)' : '');
+      e.preventDefault();
+    } else if (e.key === 'Enter' && _searchActive >= 0 && items[_searchActive]) {
+      items[_searchActive].click();
+    } else if (e.key === 'Escape') {
+      dd.classList.remove('open');
+      document.getElementById('searchInput').blur();
+    }
+  }
+
+  function _esc(s) {
+    return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  document.addEventListener('click', function(e) {
+    const sw = document.getElementById('searchWrap');
+    if (sw && !sw.contains(e.target)) {
+      document.getElementById('searchDropdown').classList.remove('open');
+    }
+  });
+
+  // ── BTM NAV BADGE ──────────────────────────────────────────
+  async function checkBtmNavBadge() {
+    try {
+      const r = await fetch('/api/naechste-aktionen');
+      if (!r.ok) return;
+      const items = await r.json();
+      const badge = document.getElementById('nav-btm-badge');
+      if (!badge) return;
+      const hasBtm = items.some(it => it.btm && Math.abs(it.minutes_to_due) <= 15);
+      badge.style.display = hasBtm ? 'flex' : 'none';
+    } catch(e) {}
+  }
+  checkBtmNavBadge();
+  setInterval(checkBtmNavBadge, 60000);
 </script>
 
 {% block scripts %}{% endblock %}

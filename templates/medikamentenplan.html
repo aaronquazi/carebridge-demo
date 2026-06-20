@@ -4,6 +4,107 @@
 {% block page_subtitle %}Aktuelle Verordnungen · {{ patient.name }}{% endblock %}
 
 {% block content %}
+<style>
+  .btn-print-med {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 14px; background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); font-size: 12px; font-weight: 500; cursor: pointer;
+    font-family: var(--sans); color: var(--ink-2); transition: all 0.15s;
+  }
+  .btn-print-med:hover { border-color: var(--blue); color: var(--blue); background: var(--blue-light); }
+
+  /* ── nur im Druck sichtbar ── */
+  .print-only { display: none; }
+
+  @media print {
+    @page { size: A4 portrait; margin: 14mm 18mm 18mm 18mm; }
+
+    .nav, .topbar, .btn-print-med,
+    .card:first-child,          /* Zeitleiste ausblenden */
+    .detail-expand,             /* Aufklapp-Zeilen ausblenden */
+    .warn-banner, .card-header span.text-xs,
+    .print-hidden { display: none !important; }
+
+    .main  { margin-left: 0 !important; }
+    .content { padding: 0 !important; }
+    body   { background: #fff !important; font-size: 11px; }
+    .card  { border: none !important; box-shadow: none !important; }
+    .card-header { border-bottom: 2px solid #0F1923 !important; padding: 8px 0 !important; }
+
+    .print-only { display: block !important; }
+    .print-footer { display: flex !important; }
+
+    /* Tabelle */
+    table { width: 100%; border-collapse: collapse; font-size: 11px; }
+    thead th {
+      background: #F7F8FA !important;
+      print-color-adjust: exact; -webkit-print-color-adjust: exact;
+      border-bottom: 2px solid #0F1923 !important;
+    }
+    tr.btm-print-row td {
+      background: #FEE2E2 !important;
+      print-color-adjust: exact; -webkit-print-color-adjust: exact;
+    }
+    .med-row { cursor: default !important; }
+    .badge { border: none !important; background: transparent !important; padding: 0 !important; }
+  }
+
+  .print-footer {
+    display: none;
+    border-top: 1px solid #DDE1E7;
+    padding-top: 8px; margin-top: 16px;
+    justify-content: space-between;
+    font-size: 10px; color: #8A9BB0;
+  }
+</style>
+
+<!-- Druckbereich: Print-Header + saubere Tabelle -->
+<div class="print-only">
+  <div style="display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid #0F1923;padding-bottom:8px;margin-bottom:16px">
+    <div>
+      <div style="font-family:'IBM Plex Serif',serif;font-style:italic;font-size:20px;color:#0F1923">CareBridge</div>
+      <div style="font-size:15px;font-weight:700;margin-top:3px">Medikamentenplan</div>
+    </div>
+    <div style="text-align:right;font-size:11px;color:#4A5568;line-height:1.7">
+      Patient: <strong>{{ patient.name }}</strong> · *{{ patient.geburtsdatum }}<br>
+      Datum: {{ heute_str }} · Erstellt von: A. Quazi
+    </div>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th style="text-align:left;padding:6px 8px;font-size:10px;text-transform:uppercase;letter-spacing:0.6px;color:#4A5568;font-weight:600">Medikament</th>
+        <th style="text-align:left;padding:6px 8px;font-size:10px;text-transform:uppercase;letter-spacing:0.6px;color:#4A5568;font-weight:600">Dosierung</th>
+        <th style="text-align:left;padding:6px 8px;font-size:10px;text-transform:uppercase;letter-spacing:0.6px;color:#4A5568;font-weight:600">Einnahmezeiten</th>
+        <th style="text-align:left;padding:6px 8px;font-size:10px;text-transform:uppercase;letter-spacing:0.6px;color:#4A5568;font-weight:600">Form</th>
+        <th style="text-align:left;padding:6px 8px;font-size:10px;text-transform:uppercase;letter-spacing:0.6px;color:#4A5568;font-weight:600">Hinweis</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for m in medikamente %}
+      <tr class="{% if m.btm is defined and m.btm %}btm-print-row{% endif %}" style="border-bottom:1px solid #F0F2F5">
+        <td style="padding:7px 8px;font-weight:600;color:#0F1923">
+          {{ m.name }}{% if m.btm is defined and m.btm %} <span style="font-size:9px;font-weight:700;color:#C0392B;border:1px solid #FCA5A5;border-radius:2px;padding:1px 4px">⚠ BTM</span>{% endif %}
+        </td>
+        <td style="padding:7px 8px;font-family:'IBM Plex Mono',monospace;font-size:11px">{{ m.dosierung }}</td>
+        <td style="padding:7px 8px;font-family:'IBM Plex Mono',monospace;font-size:11px">{{ m.zeiten | join(' / ') }}</td>
+        <td style="padding:7px 8px;font-size:11px">{{ m.form }}</td>
+        <td style="padding:7px 8px;font-size:11px;color:#4A5568">
+          {% if m.nuechtern %}🚫 {{ m.nuechtern_hinweis }}{% else %}{{ m.besonderheiten or m.nuechtern_hinweis or '—' }}{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <div style="margin-top:12px;font-size:10px;color:#4A5568;background:#FEE2E2;border:1px solid #FCA5A5;border-radius:3px;padding:6px 10px;display:inline-block">
+    ⚠ BTM-Medikamente erfordern Vier-Augen-Prinzip · Restmenge dokumentieren
+  </div>
+</div>
+
+<div class="print-footer">
+  <span>Verordnet von: {{ patient.arzt }}</span>
+  <span>CareBridge Demo · Aaron Quazi · Kein Medizinprodukt · Keine Echtdaten</span>
+</div>
 
 <!-- Zeitleiste -->
 <div class="card mb-16">
@@ -50,7 +151,10 @@
 <div class="card">
   <div class="card-header">
     <div class="card-title">Medikamenten-Details</div>
-    <span class="text-xs text-muted">Zeile anklicken für Details</span>
+    <div style="display:flex;align-items:center;gap:10px">
+      <span class="text-xs text-muted print-hidden">Zeile anklicken für Details</span>
+      <button class="btn-print-med" onclick="window.print()">🖨 Medikamentenplan drucken</button>
+    </div>
   </div>
   <div class="table-wrap">
     <table>

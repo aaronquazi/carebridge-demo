@@ -1,0 +1,261 @@
+{% extends "base.html" %}
+{% block title %}Kontakte{% endblock %}
+{% block page_title %}Kontakte{% endblock %}
+{% block page_subtitle %}Notfall- und Fachkontakte · CareBridge Demo{% endblock %}
+
+{% block content %}
+<style>
+  .kontakt-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 16px 18px;
+    box-shadow: var(--shadow); transition: box-shadow 0.15s, transform 0.1s;
+  }
+  .kontakt-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.1); transform: translateY(-1px); }
+  .kontakt-name { font-size: 14px; font-weight: 600; color: var(--ink); margin-bottom: 3px; }
+  .kontakt-rolle { font-size: 12px; color: var(--ink-3); margin-bottom: 10px; }
+  .kontakt-tel {
+    display: flex; align-items: center; gap: 6px;
+    font-family: var(--mono); font-size: 13px; font-weight: 500;
+    color: var(--blue); text-decoration: none; margin-bottom: 4px;
+  }
+  .kontakt-tel:hover { text-decoration: underline; }
+  .kontakt-tel-sub { font-family: var(--mono); font-size: 12px; color: var(--ink-3); margin-bottom: 4px; }
+  .kontakt-detail { font-size: 11px; color: var(--ink-3); margin-top: 6px; line-height: 1.5; }
+  .kontakt-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+
+  .notfall-grid-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .notfall-karte {
+    background: var(--red-light);
+    border: 1.5px solid #FCA5A5;
+    border-radius: var(--radius);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .notfall-karte-icon { font-size: 18px; }
+  .notfall-karte-label { font-size: 12px; font-weight: 600; color: #7B2D2D; }
+  .notfall-karte-num {
+    font-family: var(--mono);
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--red);
+    text-decoration: none;
+    letter-spacing: 0.5px;
+    margin-top: 4px;
+  }
+  .notfall-karte-num:hover { text-decoration: underline; }
+
+  .section-head {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .section-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.7px; color: var(--ink-2); }
+  .btn-add-kontakt {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 14px; background: var(--blue); color: #fff;
+    border: none; border-radius: var(--radius); cursor: pointer;
+    font-size: 12px; font-weight: 600; font-family: var(--sans);
+    transition: background 0.15s;
+  }
+  .btn-add-kontakt:hover { background: var(--blue-mid); }
+
+  /* Modal */
+  .modal-backdrop { display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:1000;align-items:center;justify-content:center; }
+  .modal-backdrop.open { display:flex; }
+  .modal-box { background:var(--surface);border-radius:10px;box-shadow:0 20px 60px rgba(0,0,0,0.25);padding:24px 28px;width:420px;max-width:96vw; }
+  .modal-title { font-size:14px;font-weight:700;margin-bottom:16px; }
+  .modal-row { margin-bottom:12px; }
+  .modal-label { font-size:11px;font-weight:600;color:var(--ink-2);margin-bottom:4px;display:block; }
+  .modal-input { width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:6px;font-family:var(--sans);font-size:13px;color:var(--ink);background:var(--surface);box-sizing:border-box; }
+  .modal-input:focus { outline:none;border-color:var(--blue); }
+  .modal-footer { display:flex;gap:8px;justify-content:flex-end;margin-top:16px;padding-top:12px;border-top:1px solid var(--border-soft); }
+  .btn-cancel { padding:7px 16px;border:1px solid var(--border);border-radius:6px;background:transparent;font-size:12px;cursor:pointer;font-family:var(--sans); }
+  .btn-ok { padding:7px 20px;border:none;border-radius:6px;background:var(--blue);color:#fff;font-size:12px;font-weight:500;cursor:pointer;font-family:var(--sans); }
+</style>
+
+<!-- Demo-Hinweis -->
+<div class="warn-banner mb-20" style="font-size:12px">
+  ⚠ Alle Kontaktdaten sind Demo-Daten und dienen nur der Illustration.
+</div>
+
+<!-- NOTFALLKONTAKTE -->
+<div style="margin-bottom:6px">
+  <div class="section-title" style="color:var(--red);margin-bottom:12px">🚨 Notfallkontakte</div>
+  <div class="notfall-grid-cards">
+    <div class="notfall-karte">
+      <div class="notfall-karte-icon">🚒</div>
+      <div class="notfall-karte-label">Notarzt / Feuerwehr</div>
+      <a href="tel:112" class="notfall-karte-num">112</a>
+    </div>
+    <div class="notfall-karte">
+      <div class="notfall-karte-icon">🚔</div>
+      <div class="notfall-karte-label">Polizei</div>
+      <a href="tel:110" class="notfall-karte-num">110</a>
+    </div>
+    <div class="notfall-karte">
+      <div class="notfall-karte-icon">☠</div>
+      <div class="notfall-karte-label">Giftnotruf</div>
+      <a href="tel:08001924190" class="notfall-karte-num">0800 192 40</a>
+    </div>
+    <div class="notfall-karte">
+      <div class="notfall-karte-icon">📞</div>
+      <div class="notfall-karte-label">Notruf Pflegedienst</div>
+      <a href="tel:+491520000000" class="notfall-karte-num">0152 000 0000</a>
+    </div>
+  </div>
+</div>
+
+<!-- MEDIZINISCHE KONTAKTE -->
+<div class="section-head mb-12">
+  <div class="section-title">👩‍⚕️ Medizinische Kontakte</div>
+</div>
+<div class="kontakt-grid mb-20">
+  {% for k in medizin %}
+  <div class="kontakt-card">
+    <div class="kontakt-name">{{ k.name }}</div>
+    <div class="kontakt-rolle">{{ k.rolle }}</div>
+    <a href="tel:{{ k.tel_roh }}" class="kontakt-tel">📞 {{ k.tel }}</a>
+    {% if k.tel2 %}<div class="kontakt-tel-sub">📞 {{ k.tel2_label }}: {{ k.tel2 }}</div>{% endif %}
+    <div class="kontakt-detail">{{ k.detail }}</div>
+  </div>
+  {% endfor %}
+  <!-- Dynamisch hinzugefügte Kontakte -->
+  {% for k in extra if k.kategorie == 'medizin' %}
+  <div class="kontakt-card">
+    <div class="kontakt-name">{{ k.name }}</div>
+    <div class="kontakt-rolle">{{ k.funktion }}</div>
+    <a href="tel:{{ k.telefon }}" class="kontakt-tel">📞 {{ k.telefon }}</a>
+    <div class="kontakt-detail">{{ k.erreichbarkeit }}</div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- TECHNISCHE KONTAKTE -->
+<div class="section-head mb-12">
+  <div class="section-title">⚙ Technische Kontakte</div>
+</div>
+<div class="kontakt-grid mb-20">
+  {% for k in technik %}
+  <div class="kontakt-card">
+    <div class="kontakt-name">{{ k.name }}</div>
+    <div class="kontakt-rolle">{{ k.rolle }}</div>
+    <a href="tel:{{ k.tel_roh }}" class="kontakt-tel">📞 {{ k.tel }}</a>
+    <div class="kontakt-detail">{{ k.detail }}</div>
+  </div>
+  {% endfor %}
+  {% for k in extra if k.kategorie == 'technik' %}
+  <div class="kontakt-card">
+    <div class="kontakt-name">{{ k.name }}</div>
+    <div class="kontakt-rolle">{{ k.funktion }}</div>
+    <a href="tel:{{ k.telefon }}" class="kontakt-tel">📞 {{ k.telefon }}</a>
+    <div class="kontakt-detail">{{ k.erreichbarkeit }}</div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- INTERNES PERSONAL -->
+<div class="section-head">
+  <div class="section-title">👤 Internes Personal</div>
+  <button class="btn-add-kontakt" onclick="openKontaktModal()" type="button">+ Kontakt hinzufügen</button>
+</div>
+<div class="kontakt-grid mb-20">
+  {% for k in intern %}
+  <div class="kontakt-card">
+    <div class="kontakt-name">{{ k.name }}</div>
+    <div class="kontakt-rolle">{{ k.rolle }}</div>
+    <a href="tel:{{ k.tel_roh }}" class="kontakt-tel">📞 {{ k.tel }}</a>
+    <div class="kontakt-detail">{{ k.detail }}</div>
+  </div>
+  {% endfor %}
+  {% for k in extra if k.kategorie == 'intern' %}
+  <div class="kontakt-card">
+    <div class="kontakt-name">{{ k.name }}</div>
+    <div class="kontakt-rolle">{{ k.funktion }}</div>
+    <a href="tel:{{ k.telefon }}" class="kontakt-tel">📞 {{ k.telefon }}</a>
+    <div class="kontakt-detail">{{ k.erreichbarkeit }}</div>
+  </div>
+  {% endfor %}
+  <div id="extra-intern-cards"></div>
+</div>
+
+<!-- MODAL: Kontakt hinzufügen -->
+<div class="modal-backdrop" id="kontakt-modal" onclick="closeKontaktOutside(event)">
+  <div class="modal-box">
+    <div class="modal-title">Kontakt hinzufügen</div>
+    <div class="modal-row">
+      <label class="modal-label">Name *</label>
+      <input id="kf-name" class="modal-input" placeholder="z.B. Dr. Max Muster">
+    </div>
+    <div class="modal-row">
+      <label class="modal-label">Funktion / Rolle *</label>
+      <input id="kf-funktion" class="modal-input" placeholder="z.B. Beatmungsmedizin">
+    </div>
+    <div class="modal-row">
+      <label class="modal-label">Telefon *</label>
+      <input id="kf-telefon" class="modal-input" placeholder="z.B. 0151 12345678" type="tel">
+    </div>
+    <div class="modal-row">
+      <label class="modal-label">Erreichbarkeit</label>
+      <input id="kf-erreichbar" class="modal-input" placeholder="z.B. Mo-Fr 08:00–18:00">
+    </div>
+    <div class="modal-row">
+      <label class="modal-label">Kategorie</label>
+      <select id="kf-kategorie" class="modal-input">
+        <option value="intern">Internes Personal</option>
+        <option value="medizin">Medizinische Kontakte</option>
+        <option value="technik">Technische Kontakte</option>
+      </select>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeKontaktModal()">Abbrechen</button>
+      <button class="btn-ok" onclick="saveKontakt()">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function openKontaktModal() { document.getElementById('kontakt-modal').classList.add('open'); }
+function closeKontaktModal() { document.getElementById('kontakt-modal').classList.remove('open'); }
+function closeKontaktOutside(e) { if (e.target === document.getElementById('kontakt-modal')) closeKontaktModal(); }
+
+async function saveKontakt() {
+  const name     = document.getElementById('kf-name').value.trim();
+  const funktion = document.getElementById('kf-funktion').value.trim();
+  const telefon  = document.getElementById('kf-telefon').value.trim();
+  if (!name || !telefon) { alert('Name und Telefon sind Pflichtfelder.'); return; }
+  const payload = {
+    name, funktion,
+    telefon,
+    erreichbarkeit: document.getElementById('kf-erreichbar').value.trim(),
+    kategorie: document.getElementById('kf-kategorie').value
+  };
+  try {
+    await fetch('/api/kontakte/hinzufuegen', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(payload)
+    });
+  } catch(e) {}
+  // Karte direkt einfügen
+  const card = document.createElement('div');
+  card.className = 'kontakt-card';
+  card.innerHTML = `<div class="kontakt-name">${_esc(name)}</div>
+    <div class="kontakt-rolle">${_esc(funktion)}</div>
+    <a href="tel:${_esc(telefon)}" class="kontakt-tel">📞 ${_esc(telefon)}</a>
+    <div class="kontakt-detail">${_esc(payload.erreichbarkeit)}</div>`;
+  document.getElementById('extra-intern-cards').appendChild(card);
+  closeKontaktModal();
+  ['kf-name','kf-funktion','kf-telefon','kf-erreichbar'].forEach(id => document.getElementById(id).value = '');
+}
+
+function _esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+</script>
+{% endblock %}

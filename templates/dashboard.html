@@ -5,6 +5,21 @@
 
 {% block content %}
 
+<!-- BTM Dashboard Banner -->
+<div id="db-btm-banner" style="display:none;margin-bottom:14px;border-radius:var(--radius);background:#FEE2E2;border:1.5px solid #FCA5A5;padding:12px 16px;display:none;align-items:center;justify-content:space-between;gap:12px">
+  <div style="display:flex;align-items:center;gap:10px">
+    <span style="font-size:16px">🔴</span>
+    <div>
+      <div style="font-size:13px;font-weight:700;color:#C0392B" id="db-btm-text">BTM-ALARM</div>
+      <div style="font-size:11px;color:#7B2D2D">Vier-Augen-Prinzip erforderlich! Restmenge prüfen.</div>
+    </div>
+  </div>
+  <div style="display:flex;gap:8px;align-items:center">
+    <a href="/leistungsnachweis" style="padding:6px 14px;background:#C0392B;color:#fff;border-radius:var(--radius);text-decoration:none;font-size:12px;font-weight:600">→ Zum Leistungsnachweis</a>
+    <button onclick="dismissDbBtm()" style="padding:6px 10px;background:transparent;border:1px solid #FCA5A5;border-radius:var(--radius);color:#C0392B;font-size:12px;cursor:pointer;font-family:var(--sans)">✕</button>
+  </div>
+</div>
+
 {# ── Compliance-Statusleiste ── #}
 {% if compliance is defined %}
 {% set cs = compliance_status %}
@@ -252,6 +267,35 @@
     } catch(e) {}
   }
   loadNaechsteAktionen();
+
+  // ── BTM Dashboard Banner ──────────────────────────────────
+  let _dbBtmDismissed = false;
+  async function checkDashboardBtm() {
+    if (_dbBtmDismissed) return;
+    try {
+      const r = await fetch('/api/naechste-aktionen');
+      if (!r.ok) return;
+      const items = await r.json();
+      const banner = document.getElementById('db-btm-banner');
+      const btmItem = items.find(it => it.btm && it.minutes_to_due >= -5 && it.minutes_to_due <= 15);
+      if (btmItem && banner) {
+        const diff = btmItem.minutes_to_due;
+        const zeitText = diff <= 0 ? `JETZT fällig` : `in ${diff} Min. fällig`;
+        document.getElementById('db-btm-text').textContent =
+          `BTM-ALARM — ${btmItem.leistung} · ${btmItem.zeit} Uhr (${zeitText})`;
+        banner.style.display = 'flex';
+      } else if (banner) {
+        banner.style.display = 'none';
+      }
+    } catch(e) {}
+  }
+  function dismissDbBtm() {
+    _dbBtmDismissed = true;
+    const b = document.getElementById('db-btm-banner');
+    if (b) b.style.display = 'none';
+  }
+  checkDashboardBtm();
+  setInterval(checkDashboardBtm, 60000);
 
   // ── Trend-Pfeile ─────────────────────────────────────────
   async function loadTrends() {

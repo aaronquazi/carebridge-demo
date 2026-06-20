@@ -1,0 +1,20 @@
+{
+  "spo2": {},
+  "hf": {},
+  "bd_sys": {},
+  "bd_dia": {},
+  "af": {},
+  "ipap": {},
+  "epap": {},
+  "vt": {},
+  "leckage": {},
+  "lagerung": {},
+  "temp": {},
+  "inhalation": {},
+  "cuffdruck": {
+    "7": "22"
+  },
+  "tk_pflege": {
+    "7": "✓"
+  }
+}

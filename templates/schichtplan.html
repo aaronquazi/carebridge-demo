@@ -1,0 +1,217 @@
+{% extends "base.html" %}
+
+{% block title %}Schichtplan{% endblock %}
+{% block page_title %}Schichtplan{% endblock %}
+{% block page_subtitle %}Wochenübersicht · {{ woche_label }}{% endblock %}
+
+{% block content %}
+<style>
+  .schicht-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .schicht-table th {
+    text-align: center; font-size: 11px; text-transform: uppercase;
+    letter-spacing: 0.7px; color: var(--ink-3); font-weight: 500;
+    padding: 10px 8px; background: var(--surface-2);
+    border-bottom: 2px solid var(--border);
+  }
+  .schicht-table th.day-col { text-align: left; padding-left: 16px; min-width: 90px; }
+  .schicht-table td {
+    padding: 10px 8px; text-align: center;
+    border-bottom: 1px solid var(--border-soft);
+    vertical-align: middle;
+  }
+  .schicht-table td.day-cell {
+    font-weight: 600; font-size: 13px; padding-left: 16px;
+    text-align: left; white-space: nowrap;
+  }
+  .schicht-table tr.heute-row td { background: #EBF1FF; }
+  .schicht-table tr.heute-row td.day-cell { color: var(--blue); }
+  .schicht-chip {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 4px 10px; border-radius: 4px; font-size: 12px; font-weight: 500;
+    background: var(--surface-2); color: var(--ink-2);
+    border: 1px solid var(--border);
+  }
+  .schicht-chip.aq  { background: #EBF1FF; color: var(--blue); border-color: #B8D0FF; }
+  .schicht-chip.sk  { background: var(--green-light); color: var(--green); border-color: #A7E3D3; }
+  .schicht-chip.mb  { background: var(--amber-light); color: var(--amber); border-color: #FCD34D; }
+  .schicht-chip.aktiv { box-shadow: 0 0 0 2px currentColor; }
+  .schicht-chip.frei { background: #F0F2F5; color: var(--ink-3); border-color: var(--border-soft); font-style: italic; }
+
+  .dienst-box {
+    border-radius: 8px; padding: 18px 20px;
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .dienst-now { background: var(--green-light); border: 1px solid #A7E3D3; }
+  .dienst-next { background: var(--surface-2); border: 1px solid var(--border); }
+  .dienst-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
+  .dienst-name { font-size: 15px; font-weight: 600; color: var(--ink); }
+  .dienst-sub  { font-size: 12px; color: var(--ink-3); }
+
+  .schicht-form select, .schicht-form input[type=text] {
+    height: 36px; border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 0 10px; font-size: 13px; font-family: var(--sans);
+    background: var(--surface); color: var(--ink);
+  }
+  .schicht-form select:focus, .schicht-form input[type=text]:focus {
+    outline: none; border-color: var(--blue);
+  }
+  .btn-save {
+    padding: 8px 20px; background: var(--blue); color: #fff;
+    border: none; border-radius: var(--radius); cursor: pointer;
+    font-size: 13px; font-weight: 600; font-family: var(--sans);
+    transition: background 0.15s;
+  }
+  .btn-save:hover { background: var(--blue-mid); }
+</style>
+
+<!-- HEUTE IM DIENST -->
+<div class="grid-3 mb-20">
+  <div class="dienst-box dienst-now">
+    <div class="dienst-label" style="color:var(--green)">🟢 Jetzt im Dienst</div>
+    <div class="dienst-name">{{ heute_dienst.name }}</div>
+    <div class="dienst-sub">{{ heute_dienst.schicht_label }} · {{ heute_dienst.zeiten }}</div>
+  </div>
+  <div class="dienst-box dienst-next">
+    <div class="dienst-label" style="color:var(--ink-3)">Nächste Schicht</div>
+    <div class="dienst-name" style="font-size:14px">{{ naechste_dienst.name }}</div>
+    <div class="dienst-sub">{{ naechste_dienst.schicht_label }} · ab {{ naechste_dienst.ab }}</div>
+  </div>
+  <div class="dienst-box dienst-next">
+    <div class="dienst-label" style="color:var(--ink-3)">Woche</div>
+    <div class="dienst-name" style="font-size:14px">{{ woche_label }}</div>
+    <div class="dienst-sub">KW {{ kw }} · 3 Mitarbeiter im Einsatz</div>
+  </div>
+</div>
+
+<!-- WOCHENANSICHT -->
+<div class="card mb-20">
+  <div class="card-header">
+    <div class="card-title">
+      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+      Schichtplan — Diese Woche
+    </div>
+    <div class="text-xs text-muted">Aktuelle Schicht hervorgehoben</div>
+  </div>
+  <div class="card-body" style="padding:0">
+    <div class="table-wrap">
+      <table class="schicht-table">
+        <thead>
+          <tr>
+            <th class="day-col">Tag</th>
+            <th>Frühschicht<br><span style="font-weight:400;font-size:10px;text-transform:none;letter-spacing:0">06:00–14:00</span></th>
+            <th>Spätschicht<br><span style="font-weight:400;font-size:10px;text-transform:none;letter-spacing:0">14:00–22:00</span></th>
+            <th>Nachtschicht<br><span style="font-weight:400;font-size:10px;text-transform:none;letter-spacing:0">22:00–06:00</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for tag in woche %}
+          <tr {% if tag.ist_heute %}class="heute-row"{% endif %}>
+            <td class="day-cell">
+              {{ tag.wochentag_kurz }}<br>
+              <span style="font-weight:400;color:var(--ink-3);font-size:11px">{{ tag.datum_kurz }}</span>
+              {% if tag.ist_heute %}<span style="font-size:10px;background:var(--blue);color:#fff;border-radius:3px;padding:1px 5px;margin-left:4px">heute</span>{% endif %}
+            </td>
+            {% for schicht_key in ['frueh', 'spaet', 'nacht'] %}
+            {% set kuerzel = tag.schichten[schicht_key] %}
+            <td>
+              {% if kuerzel %}
+              {% set chip_class = kuerzel.lower() %}
+              {% set ist_aktiv = tag.ist_heute and tag.aktive_schicht == schicht_key %}
+              <span class="schicht-chip {{ chip_class }}{% if ist_aktiv %} aktiv{% endif %}">
+                {% if ist_aktiv %}▶ {% endif %}{{ kuerzel }} · {% if kuerzel == 'AQ' %}A. Quazi{% elif kuerzel == 'SK' %}S. Krause{% elif kuerzel == 'MB' %}M. Berger{% else %}{{ kuerzel }}{% endif %}
+              </span>
+              {% else %}
+              <span class="schicht-chip frei">frei</span>
+              {% endif %}
+            </td>
+            {% endfor %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- LEGENDE + FORMULAR -->
+<div class="grid-2">
+  <div class="card">
+    <div class="card-header"><div class="card-title">Legende</div></div>
+    <div class="card-body">
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span class="schicht-chip aq">AQ</span>
+          <span class="text-sm">Aaron Quazi — examinierte Pflegefachkraft</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <span class="schicht-chip sk">SK</span>
+          <span class="text-sm">Sandra Krause — examinierte Pflegefachfrau (Pflegeleitung)</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <span class="schicht-chip mb">MB</span>
+          <span class="text-sm">Michael Berger — Pflegefachmann</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <span class="schicht-chip aktiv aq" style="box-shadow:0 0 0 2px var(--blue)">▶ AQ</span>
+          <span class="text-sm">Aktuell im Dienst</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><div class="card-title">Schicht eintragen</div></div>
+    <div class="card-body">
+      <div class="warn-banner mb-16" style="font-size:12px">
+        ⚠ Demo-Modus — Änderungen werden nicht dauerhaft gespeichert
+      </div>
+      <form class="schicht-form" onsubmit="schichtSpeichern(event)" style="display:flex;flex-direction:column;gap:10px">
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <select id="sf-tag" style="flex:1;min-width:120px">
+            {% for tag in woche %}
+            <option value="{{ tag.datum }}">{{ tag.wochentag_lang }}, {{ tag.datum_kurz }}</option>
+            {% endfor %}
+          </select>
+          <select id="sf-schicht" style="flex:1;min-width:120px">
+            <option value="frueh">Frühschicht (06–14)</option>
+            <option value="spaet">Spätschicht (14–22)</option>
+            <option value="nacht">Nachtschicht (22–06)</option>
+          </select>
+        </div>
+        <div style="display:flex;gap:8px">
+          <select id="sf-kuerzel" style="flex:1">
+            <option value="AQ">AQ — Aaron Quazi</option>
+            <option value="SK">SK — Sandra Krause</option>
+            <option value="MB">MB — Michael Berger</option>
+          </select>
+          <button type="submit" class="btn-save">Speichern</button>
+        </div>
+        <div id="sf-msg" style="font-size:12px;color:var(--green);display:none">✓ Eintrag gespeichert (Demo)</div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+async function schichtSpeichern(e) {
+  e.preventDefault();
+  const payload = {
+    datum:   document.getElementById('sf-tag').value,
+    schicht: document.getElementById('sf-schicht').value,
+    kuerzel: document.getElementById('sf-kuerzel').value
+  };
+  try {
+    await fetch('/api/schichtplan/eintrag', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(payload)
+    });
+    const msg = document.getElementById('sf-msg');
+    msg.style.display = 'block';
+    setTimeout(() => { msg.style.display = 'none'; }, 3000);
+  } catch(err) {
+    console.error(err);
+  }
+}
+</script>
+{% endblock %}

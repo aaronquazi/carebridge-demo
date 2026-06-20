@@ -62,6 +62,35 @@
   tr.btm-row td { border-left: 3px solid #C0392B; }
   .badge-btm { background:#fee2e2;color:#C0392B;border:1px solid #FCA5A5;font-size:10px;padding:1px 6px;border-radius:3px;font-weight:600;margin-left:4px; }
 
+  /* ── PRINT ── */
+  .btn-print-lnw {
+    display:inline-flex;align-items:center;gap:6px;
+    padding:6px 14px;background:var(--surface);border:1px solid var(--border);
+    border-radius:var(--radius);font-size:12px;font-weight:500;cursor:pointer;
+    font-family:var(--sans);color:var(--ink-2);transition:all 0.15s;
+  }
+  .btn-print-lnw:hover { border-color:var(--blue);color:var(--blue);background:var(--blue-light); }
+
+  @media print {
+    @page { size: A4 portrait; margin: 15mm 18mm 18mm 18mm; }
+    .nav,.topbar,.modal-backdrop,.btm-alarm-banner,.btn-abz,.btn-undo,.btn-add,.btn-print-lnw,
+    #bemerk-kuerzel,#bemerk-schicht,#bemerk-text,.bemerk-box>div:first-child { display:none!important; }
+    .main { margin-left:0!important; }
+    .content { padding:0!important; }
+    body { background:#fff!important; font-size:11px; }
+    .card { border:none!important; box-shadow:none!important; }
+    .card-header { border-bottom:2px solid #0F1923!important; }
+    .print-header { display:block!important; }
+    .print-footer { display:block!important; }
+    thead th { background:#F7F8FA!important; print-color-adjust:exact; -webkit-print-color-adjust:exact; }
+    tr.btm-row td { border-left:3px solid #C0392B!important; print-color-adjust:exact; -webkit-print-color-adjust:exact; }
+    .badge-btm { background:#fee2e2!important;color:#C0392B!important;print-color-adjust:exact;-webkit-print-color-adjust:exact; }
+    .stat-tile,#offen-count,#progress-pct { display:none!important; }
+  }
+
+  .print-header { display:none; border-bottom:2px solid #0F1923; padding-bottom:8px; margin-bottom:16px; }
+  .print-footer { display:none; border-top:1px solid #DDE1E7; padding-top:8px; margin-top:20px; font-size:10px; color:#8A9BB0; display:flex; justify-content:space-between; }
+
   /* Schichtbemerkungen */
   .bemerk-box {
     background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
@@ -74,6 +103,20 @@
   .bemerk-meta { font-size:10px;color:var(--ink-3);margin-bottom:4px; }
   .bemerk-text { font-size:12px;color:var(--ink);line-height:1.5; }
 </style>
+
+<!-- Print Header (nur im Druck sichtbar) -->
+<div class="print-header">
+  <div style="display:flex;justify-content:space-between;align-items:flex-end">
+    <div>
+      <div style="font-family:'IBM Plex Serif',serif;font-style:italic;font-size:20px">CareBridge</div>
+      <div style="font-size:16px;font-weight:700;margin-top:4px">Leistungsnachweis</div>
+    </div>
+    <div style="text-align:right;font-size:11px;color:#4A5568">
+      Patient: <strong>{{ patient.name }}</strong><br>
+      Datum: {{ heute_str if heute_str else '' }} · {{ patient.zimmer }}
+    </div>
+  </div>
+</div>
 
 <!-- BTM Alarm Banner -->
 <div class="btm-alarm-banner" id="btm-alarm-banner">
@@ -114,7 +157,10 @@
 <div class="card mb-16">
   <div class="card-header">
     <div class="card-title">Geplante Leistungen — Tagschicht</div>
-    <span class="badge badge-gray">Pflegekraft: A. Berger</span>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button class="btn-print-lnw" onclick="window.print()" type="button">🖨 Tagesblatt drucken</button>
+      <span class="badge badge-gray">Pflegekraft: A. Berger</span>
+    </div>
   </div>
   <div class="table-wrap">
     <table>
@@ -214,6 +260,12 @@
       Noch keine Schichtbemerkungen für heute.
     </div>
   </div>
+</div>
+
+<!-- Print Footer -->
+<div class="print-footer">
+  <span>CareBridge Demo · Aaron Quazi · Kein Medizinprodukt</span>
+  <span>{{ patient.name }} · Leistungsnachweis</span>
 </div>
 
 <!-- ═══ MODAL: Abzeichnen ═══ -->

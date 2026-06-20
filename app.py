@@ -1176,6 +1176,7 @@ def leistungsnachweis():
         leistungen=leistungen,
         bestaetigt=bestaetigt,
         gesamt=len(leistungen),
+        heute_str=date.today().strftime("%d.%m.%Y"),
         aktiv="leistungsnachweis"
     )
 
@@ -1223,6 +1224,7 @@ def medikamentenplan():
     return render_template("medikamentenplan.html",
         patient=patient,
         medikamente=DEMO_MEDIKAMENTENPLAN,
+        heute_str=date.today().strftime("%d.%m.%Y"),
         aktiv="medikamentenplan"
     )
 
@@ -2150,6 +2152,275 @@ def qualitaet():
     kn      = get_qualitaets_kennzahlen()
     patient = get_current_patient()
     return render_template("qualitaet.html", kn=kn, patient=patient, aktiv="qualitaet")
+
+
+# ──────────────────────────────────────────
+# KONTAKTE
+# ──────────────────────────────────────────
+
+KONTAKTE_FILE = os.path.join(DATA_DIR, "kontakte.json")
+
+DEMO_KONTAKTE_MEDIZIN = [
+    {"name": "Dr. Elisabeth Hoffmann", "rolle": "Hausärztin / Beatmungsmedizin",
+     "tel": "0151 23 456 789", "tel_roh": "+4915123456789",
+     "tel2": None, "tel2_label": None,
+     "detail": "Erreichbar: Mo–Fr 08:00–18:00 · Notfall: 24 h Bereitschaft"},
+    {"name": "Lungenklinik Musterstadt", "rolle": "Pneumologie / Beatmungszentrum",
+     "tel": "0123 456-0", "tel_roh": "+491234560",
+     "tel2": "0123 456-200", "tel2_label": "Station",
+     "detail": "Sprechstunde: Di + Do 09:00–12:00 · Aufnahme 24 h"},
+    {"name": "Neurologische Praxis Dr. Berger", "rolle": "Neurologie / ALS-Spezialambulanz",
+     "tel": "0123 789-100", "tel_roh": "+4912378900",
+     "tel2": None, "tel2_label": None,
+     "detail": "Mo, Mi, Fr 08:00–13:00 · Termine nach Vereinbarung"},
+    {"name": "Palliativnetz Musterstadt", "rolle": "Palliativmedizin / Krisenintervention",
+     "tel": "0800 500 400 300", "tel_roh": "+49800500400300",
+     "tel2": None, "tel2_label": None,
+     "detail": "24 h erreichbar · Krisentelefon auch nachts"},
+]
+
+DEMO_KONTAKTE_TECHNIK = [
+    {"name": "ResMed Geräte-Hotline", "rolle": "Astral 150 — technischer Support",
+     "tel": "0800 7376 633", "tel_roh": "+498007376633",
+     "detail": "24 h · 7 Tage · Kostenlos · Gerätenummer bereithalten"},
+    {"name": "Linde Gas — Sauerstoffversorgung", "rolle": "O₂-Lieferung & Notfallversorgung",
+     "tel": "0800 5463 463", "tel_roh": "+498005463463",
+     "detail": "24 h Notfallservice · Kundennummer bereithalten"},
+    {"name": "Sanitätshaus Musterstadt GmbH", "rolle": "Hilfsmittelversorgung & Zubehör",
+     "tel": "0123 789-0", "tel_roh": "+491237890",
+     "detail": "Mo–Fr 08:00–17:00 · Sa 09:00–13:00 · Lieferservice"},
+    {"name": "Intensivpflege-Service Nord", "rolle": "Reparatur & Wartung Beatmungsgeräte",
+     "tel": "040 1234 5678", "tel_roh": "+4940123456780",
+     "detail": "Mo–Fr 07:00–18:00 · Bereitschaftsdienst wochends"},
+]
+
+DEMO_KONTAKTE_INTERN = [
+    {"name": "Sandra Krause", "rolle": "Pflegeleitung · Examinierte Pflegefachfrau",
+     "tel": "0152 98 765 432", "tel_roh": "+4915298765432",
+     "detail": "Bereitschaft: 06:00–22:00 · Nachtbereitschaft nach Absprache"},
+    {"name": "Aaron Quazi", "rolle": "Examinierter Pflegefachmann",
+     "tel": "0151 11 223 344", "tel_roh": "+4915111223344",
+     "detail": "Frühschicht 06:00–14:00 · Spätschicht 14:00–22:00"},
+    {"name": "Michael Berger", "rolle": "Pflegefachmann",
+     "tel": "0152 33 445 566", "tel_roh": "+4915233445566",
+     "detail": "Nachtschicht 22:00–06:00 · Bereitschaft nach Dienstplan"},
+]
+
+def get_extra_kontakte():
+    if os.path.exists(KONTAKTE_FILE):
+        with open(KONTAKTE_FILE, encoding="utf-8") as f:
+            return json.load(f)
+    return []
+
+@app.route("/kontakte")
+def kontakte():
+    extra = get_extra_kontakte()
+    return render_template("kontakte.html",
+        medizin=DEMO_KONTAKTE_MEDIZIN,
+        technik=DEMO_KONTAKTE_TECHNIK,
+        intern=DEMO_KONTAKTE_INTERN,
+        extra=extra,
+        aktiv="kontakte"
+    )
+
+@app.route("/api/kontakte/hinzufuegen", methods=["POST"])
+def api_kontakte_hinzufuegen():
+    payload = request.get_json(force=True)
+    name = payload.get("name", "").strip()
+    if not name:
+        return jsonify({"ok": False}), 400
+    extra = get_extra_kontakte()
+    entry = {
+        "name":         name,
+        "funktion":     payload.get("funktion", ""),
+        "telefon":      payload.get("telefon", ""),
+        "erreichbarkeit": payload.get("erreichbarkeit", ""),
+        "kategorie":    payload.get("kategorie", "intern"),
+        "erstellt":     datetime.now().strftime("%Y-%m-%d %H:%M")
+    }
+    extra.append(entry)
+    with open(KONTAKTE_FILE, "w", encoding="utf-8") as f:
+        json.dump(extra, f, ensure_ascii=False, indent=2)
+    return jsonify({"ok": True})
+
+# ──────────────────────────────────────────
+# EXPORT — PATIENTENAKTE
+# ──────────────────────────────────────────
+
+def get_kurve_zeilen_fuer_export(patient_id):
+    kurve = get_kurve_data(patient_id)
+    stunden = list(range(7, 23))
+    zeilen = []
+    for h in stunden:
+        h_str = str(h)
+        def v(key):
+            return kurve.get(key, {}).get(h_str, "") or ""
+        spo2 = v('spo2')
+        hf   = v('hf')
+        if not spo2 and not hf:
+            continue
+        zeilen.append({
+            "uhrzeit":  f"{h:02d}:00",
+            "spo2":     spo2,
+            "hf":       hf,
+            "bd_sys":   v('bd_sys'),
+            "bd_dia":   v('bd_dia'),
+            "af":       v('af'),
+            "vt":       v('vt'),
+            "leckage":  v('leckage'),
+            "ipap":     v('ipap'),
+            "epap":     v('epap'),
+            "lagerung": v('lagerung'),
+        })
+    return zeilen
+
+def get_pflegebericht_7tage(patient_id):
+    alle = get_pflegebericht_data(patient_id)
+    cutoff = (date.today() - timedelta(days=7)).strftime("%Y-%m-%d")
+    result = []
+    for e in alle:
+        datum_iso = e.get("datum_iso") or e.get("datum", "")
+        if len(datum_iso) == 10 and datum_iso >= cutoff:
+            result.append(e)
+        elif len(datum_iso) < 10:
+            result.append(e)
+    return sorted(result, key=lambda x: (x.get("datum", ""), x.get("uhrzeit", "")), reverse=True)
+
+@app.route("/export/patientenakte")
+def export_patientenakte():
+    patient    = get_current_patient()
+    pid        = patient['id']
+    verordnung = get_current_verordnung()
+    kurve_zeilen = get_kurve_zeilen_fuer_export(pid)
+    pflegebericht = get_pflegebericht_7tage(pid)
+    heute_str  = date.today().strftime("%d.%m.%Y")
+    return render_template("export_akte.html",
+        patient=patient,
+        verordnung=verordnung,
+        medikamente=DEMO_MEDIKAMENTENPLAN,
+        kurve_zeilen=kurve_zeilen,
+        pflegebericht=pflegebericht,
+        heute_str=heute_str,
+        aktiv="export_akte"
+    )
+
+# ──────────────────────────────────────────
+# SCHICHTPLAN
+# ──────────────────────────────────────────
+
+SCHICHTPLAN_FILE = os.path.join(DATA_DIR, "schichtplan.json")
+
+DEMO_SCHICHTPLAN_MUSTER = [
+    {"frueh": "AQ", "spaet": "SK", "nacht": "MB"},
+    {"frueh": "SK", "spaet": "AQ", "nacht": "MB"},
+    {"frueh": "AQ", "spaet": "MB", "nacht": "SK"},
+    {"frueh": "MB", "spaet": "SK", "nacht": "AQ"},
+    {"frueh": "AQ", "spaet": "SK", "nacht": "MB"},
+    {"frueh": "SK", "spaet": "AQ", "nacht": "MB"},
+    {"frueh": "MB", "spaet": "AQ", "nacht": "SK"},
+]
+
+WOCHENTAGE_LANG  = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"]
+WOCHENTAGE_KURZ  = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"]
+
+def get_schichtplan_daten():
+    if os.path.exists(SCHICHTPLAN_FILE):
+        with open(SCHICHTPLAN_FILE, encoding="utf-8") as f:
+            return json.load(f)
+    return {}
+
+def get_aktive_schicht():
+    h = datetime.now().hour
+    if 6 <= h < 14:
+        return "frueh"
+    elif 14 <= h < 22:
+        return "spaet"
+    else:
+        return "nacht"
+
+SCHICHT_LABELS = {"frueh": "Frühschicht", "spaet": "Spätschicht", "nacht": "Nachtschicht"}
+SCHICHT_ZEITEN = {"frueh": "06:00–14:00", "spaet": "14:00–22:00", "nacht": "22:00–06:00"}
+SCHICHT_NEXT_AB = {"frueh": "14:00", "spaet": "22:00", "nacht": "06:00"}
+PERSONAL_NAMEN = {"AQ": "Aaron Quazi", "SK": "Sandra Krause", "MB": "Michael Berger"}
+
+@app.route("/schichtplan", methods=["GET", "POST"])
+def schichtplan():
+    heute = date.today()
+    montag = heute - timedelta(days=heute.weekday())
+    gespeichert = get_schichtplan_daten()
+
+    woche = []
+    for i in range(7):
+        tag_datum = montag + timedelta(days=i)
+        datum_str = tag_datum.strftime("%Y-%m-%d")
+        ist_heute = (tag_datum == heute)
+        muster = DEMO_SCHICHTPLAN_MUSTER[i]
+        schichten = gespeichert.get(datum_str, muster)
+        aktive = get_aktive_schicht() if ist_heute else None
+        woche.append({
+            "datum":          datum_str,
+            "datum_kurz":     tag_datum.strftime("%d.%m."),
+            "wochentag_kurz": WOCHENTAGE_KURZ[i],
+            "wochentag_lang": WOCHENTAGE_LANG[i],
+            "ist_heute":      ist_heute,
+            "aktive_schicht": aktive,
+            "schichten":      schichten,
+        })
+
+    heute_schicht_key = get_aktive_schicht()
+    heute_eintrag     = woche[heute.weekday()]
+    heute_kuerzel     = heute_eintrag["schichten"].get(heute_schicht_key, "AQ")
+    next_key_map      = {"frueh": "spaet", "spaet": "nacht", "nacht": "frueh"}
+    next_schicht_key  = next_key_map[heute_schicht_key]
+    next_kuerzel      = heute_eintrag["schichten"].get(next_schicht_key, "SK")
+
+    heute_dienst = {
+        "name":         PERSONAL_NAMEN.get(heute_kuerzel, heute_kuerzel),
+        "kuerzel":      heute_kuerzel,
+        "schicht_label": SCHICHT_LABELS[heute_schicht_key],
+        "zeiten":       SCHICHT_ZEITEN[heute_schicht_key],
+    }
+    naechste_dienst = {
+        "name":         PERSONAL_NAMEN.get(next_kuerzel, next_kuerzel),
+        "kuerzel":      next_kuerzel,
+        "schicht_label": SCHICHT_LABELS[next_schicht_key],
+        "ab":           SCHICHT_NEXT_AB[heute_schicht_key],
+    }
+
+    kw = heute.isocalendar()[1]
+    woche_label = f"{montag.strftime('%d.%m.')} – {(montag + timedelta(days=6)).strftime('%d.%m.%Y')}"
+
+    return render_template("schichtplan.html",
+        woche=woche,
+        heute_dienst=heute_dienst,
+        naechste_dienst=naechste_dienst,
+        kw=kw,
+        woche_label=woche_label,
+        aktiv="schichtplan"
+    )
+
+@app.route("/api/schichtplan/eintrag", methods=["POST"])
+def api_schichtplan_eintrag():
+    payload = request.get_json(force=True)
+    datum   = payload.get("datum", "")
+    schicht = payload.get("schicht", "")
+    kuerzel = payload.get("kuerzel", "")
+    if not datum or schicht not in ("frueh", "spaet", "nacht"):
+        return jsonify({"ok": False, "fehler": "Ungültige Parameter"}), 400
+    daten = get_schichtplan_daten()
+    if datum not in daten:
+        heute = date.today()
+        montag = heute - timedelta(days=heute.weekday())
+        for i in range(7):
+            d = montag + timedelta(days=i)
+            dstr = d.strftime("%Y-%m-%d")
+            if dstr not in daten:
+                daten[dstr] = dict(DEMO_SCHICHTPLAN_MUSTER[i])
+    daten.setdefault(datum, {})
+    daten[datum][schicht] = kuerzel
+    with open(SCHICHTPLAN_FILE, "w", encoding="utf-8") as f:
+        json.dump(daten, f, ensure_ascii=False, indent=2)
+    return jsonify({"ok": True})
 
 
 if __name__ == "__main__":
