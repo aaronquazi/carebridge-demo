@@ -126,6 +126,18 @@ class DocumentationCompliance:
             elapsed_min = DEMO_ELAPSED[group]
             last_dt = self.now - timedelta(minutes=elapsed_min)
             last_str = f"zuletzt {last_dt.strftime('%H:%M')} Uhr (Demo)"
+            overdue = max(0.0, elapsed_min - interval)
+            overdue = min(overdue, 59)  # Demo: cap at yellow
+            return {
+                "id":          group,
+                "label":       LABELS[group],
+                "severity":    self._severity(overdue),
+                "overdue_min": int(overdue),
+                "overdue_str": self._overdue_str(overdue),
+                "last_str":    last_str,
+                "hint":        HINTS[group],
+                "is_demo":     True,
+            }
         else:
             last_h = self._last_hour_with_value(KEY_GROUPS[group])
             if last_h is None:
@@ -181,9 +193,10 @@ class DocumentationCompliance:
             elapsed = (self.now - due_dt).total_seconds() / 60
 
             if use_demo:
-                # Erstes Slot jeder Gruppe + 13:00-Medikamente → erledigt
-                done = h == hours[0] or (schedule_key == "medikamente" and h == 13)
-                overdue = 0 if done else max(0, int(elapsed) - 10)
+                # Demo: slots done if first slot or >90 min ago (considered completed)
+                done = h == hours[0] or (schedule_key == "medikamente" and h == 13) or elapsed > 90
+                raw_overdue = 0 if done else max(0, int(elapsed) - 10)
+                overdue = min(raw_overdue, 59)  # Demo: cap at yellow max
             else:
                 val  = self.kurve.get(kurve_key, {}).get(str(h), "").strip()
                 done = bool(val)

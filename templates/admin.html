@@ -212,6 +212,19 @@
   </div>
 </div>
 
+<!-- Storage-Hinweis -->
+<div style="margin-top:24px;display:flex;align-items:flex-start;gap:12px;padding:14px 16px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);font-size:12px;color:var(--ink-2)">
+  <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="flex-shrink:0;margin-top:1px;color:var(--ink-3)">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"/>
+  </svg>
+  <div>
+    <strong style="color:var(--ink)">Demo-Hinweis Datenspeicherung:</strong>
+    Eingetragene Daten werden als JSON-Dateien gespeichert und sind innerhalb einer Session verfügbar.
+    Bei einem Server-Neustart oder Inaktivität können Daten zurückgesetzt werden.
+    In einer Produktivversion würde CareBridge eine verschlüsselte PostgreSQL-Datenbank mit Audit-Log verwenden — DSGVO-konform und dauerhaft.
+  </div>
+</div>
+
 {% endblock %}
 
 {% block scripts %}

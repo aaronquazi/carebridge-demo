@@ -459,8 +459,10 @@ def get_demo_leistungen(patient_id=None):
         {"zeit": "08:15", "datum": heute, "leistung": "Vitalzeichenkontrolle",                "kuerzel": "VIT", "pflegekraft": "", "bestaetigt": False},
         {"zeit": "10:00", "datum": heute, "leistung": "Lagerungswechsel (30°-Lagerung)",      "kuerzel": "LAG", "pflegekraft": "", "bestaetigt": False},
         {"zeit": "12:00", "datum": heute, "leistung": "Mittagspflege / Mundpflege",           "kuerzel": "MP",  "pflegekraft": "", "bestaetigt": False},
+        {"zeit": "12:00", "datum": heute, "leistung": "Morphin 10mg s.c. — BTM-pflichtig",   "kuerzel": "MED", "pflegekraft": "", "bestaetigt": False, "btm": True},
         {"zeit": "13:00", "datum": heute, "leistung": "Medikamentengabe (13:00)",             "kuerzel": "MED", "pflegekraft": "", "bestaetigt": False},
         {"zeit": "14:00", "datum": heute, "leistung": "Vitalzeichenkontrolle",                "kuerzel": "VIT", "pflegekraft": "", "bestaetigt": False},
+        {"zeit": "22:00", "datum": heute, "leistung": "Lorazepam 0,5 mg — BTM-pflichtig",    "kuerzel": "MED", "pflegekraft": "", "bestaetigt": False, "btm": True},
     ]
     signoffs = get_leistungen_signoffs(patient_id)
     for l in base:
@@ -476,8 +478,17 @@ def get_uebergabe_check(patient_id=None):
     leistungen = get_demo_leistungen(patient_id)
     offen = [l for l in leistungen if not l["bestaetigt"]]
     warnungen = []
-    if offen:
-        warnungen.append(f"{len(offen)} Leistungen noch nicht bestätigt")
+    now_min = datetime.now().hour * 60 + datetime.now().minute
+    truly_overdue = []
+    for l in offen:
+        try:
+            h, m = l['zeit'].split(':')
+            if now_min - (int(h) * 60 + int(m)) > 15:
+                truly_overdue.append(l)
+        except Exception:
+            truly_overdue.append(l)
+    if truly_overdue:
+        warnungen.append(f"{len(truly_overdue)} Leistungen überfällig — vor Übergabe abzeichnen")
     kurve_werte = get_kurve_letzt_werte(patient_id)
     spo2_val = safe_num(kurve_werte.get('spo2'))
     if spo2_val is not None and spo2_val < 94:
@@ -492,7 +503,7 @@ def get_uebergabe_check(patient_id=None):
                 warnungen.append(f"TK-Wechsel in {tage} Tagen fällig")
         except ValueError:
             pass
-    return {"offene_leistungen": offen, "warnungen": warnungen, "bereit": len(warnungen) == 0}
+    return {"offene_leistungen": offen, "warnungen": warnungen, "bereit": len(truly_overdue) == 0}
 
 def get_demo_verlauf_14_tage(patient_id='P-2024-0042'):
     rng = random.Random(hash(patient_id) % 9999)
@@ -535,7 +546,8 @@ def init_demo_data():
     # ── Max Mustermann (P-2024-0042) ──
     pid = "P-2024-0042"
     kf  = os.path.join(DATA_DIR, f"kurve_{pid}_{heute}.json")
-    if not os.path.exists(kf):
+    # Always regenerate Kurve so time-based demo data stays current
+    if True:
         k = {key: {} for key in ['spo2','hf','bd_sys','bd_dia','af','ipap','epap','vt','leckage','lagerung','temp','inhalation','cuffdruck','tk_pflege']}
 
         SPO2 = [96, 97, 95, 96, 97]
@@ -545,7 +557,7 @@ def init_demo_data():
         LK   = [8, 9, 7, 10, 8]
         BDS  = [118, 116, 122]
         BDD  = [76, 74, 78]
-        TEMP = ["36.7", "36.8", "37.0"]
+        TEMP = ["36.7", "38.7", "37.0"]
 
         for idx, h in enumerate(VITAL_HOURS):
             if h <= cur_h:
@@ -601,7 +613,7 @@ def init_demo_data():
     # ── Maria Musterfrau (P-2024-0043) ──
     pid2 = "P-2024-0043"
     kf2  = os.path.join(DATA_DIR, f"kurve_{pid2}_{heute}.json")
-    if not os.path.exists(kf2):
+    if True:
         k2 = {key: {} for key in ['spo2','hf','bd_sys','bd_dia','af','ipap','epap','vt','leckage','lagerung','temp','inhalation']}
 
         SPO2_M = [93, 94, 92, 93, 91]
@@ -944,6 +956,86 @@ def init_demo_wunden():
         json.dump(data, f, ensure_ascii=False, indent=2)
 
 
+def init_demo_maria():
+    """Erstellt vollständige Demo-Daten für Maria Musterfrau (P-2024-0043)."""
+    pid = "P-2024-0043"
+    today = date.today()
+    def d(days_ago): return (today - timedelta(days=days_ago)).strftime("%Y-%m-%d")
+
+    # Pflegebericht
+    pb_f = os.path.join(DATA_DIR, f"pflegebericht_{pid}.json")
+    if not os.path.exists(pb_f):
+        data = [
+            {"id":"mpb1","datum":d(0),"uhrzeit":"07:15","kategorie":"Allgemein",
+             "text":"Patientin hat gut geschlafen. COPD-bedingt erhöhte Atemfrequenz am Morgen (22/min), nach Inhalation gebessert auf 18/min. Allgemeinzustand stabil.",
+             "kuerzel":"SK","schmerz":"","lokalisation":""},
+            {"id":"mpb2","datum":d(1),"uhrzeit":"09:30","kategorie":"Beatmung",
+             "text":"Sekret: zähflüssig, gelblich. Absaugung 3x durchgeführt. Arzt über Sekretbeschaffenheit informiert. Dr. Hoffmann empfiehlt Intensivierung der Inhalation.",
+             "kuerzel":"SK","schmerz":"2","lokalisation":"Brust"},
+            {"id":"mpb3","datum":d(2),"uhrzeit":"14:00","kategorie":"Pflege",
+             "text":"Lagerungswechsel durchgeführt. Patientin kooperativ. SpO₂ stabil bei 92–93% unter Beatmung. Keine Druckstellen. Mobilisation im Bett nach Plan.",
+             "kuerzel":"AQ","schmerz":"","lokalisation":""},
+        ]
+        with open(pb_f, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+
+    # Therapien
+    th_f = os.path.join(DATA_DIR, f"therapien_{pid}.json")
+    if not os.path.exists(th_f):
+        data = {
+            "verordnungen": [
+                {"id":"mt1","typ":"Atemphysiotherapie","frequenz":"3x/Woche","therapeut":"T. Müller","seit":"2024-04-01","ziel":"Sekretmobilisation und Atemmuskelkräftigung"},
+                {"id":"mt2","typ":"Ergotherapie","frequenz":"1x/Woche","therapeut":"S. Klein","seit":"2024-05-15","ziel":"Selbstständigkeit im Alltag erhalten"},
+            ],
+            "eintraege": [
+                {"id":"me1","datum":d(1),"uhrzeit":"10:00","typ":"Atemphysiotherapie","therapeut":"T. Müller",
+                 "bericht":"Atemübungen durchgeführt. Vibrationsmassage zur Sekretlösung. Patientin toleriert Maßnahmen gut. Deutliche Sekretmobilisation.","kuerzel":"SK"},
+                {"id":"me2","datum":d(4),"uhrzeit":"11:30","typ":"Ergotherapie","therapeut":"S. Klein",
+                 "bericht":"Alltagstraining: Trinkbecher selbstständig halten. Feinmotorik leicht eingeschränkt. Übungen für die Hände durchgeführt.","kuerzel":"SK"},
+                {"id":"me3","datum":d(5),"uhrzeit":"10:00","typ":"Atemphysiotherapie","therapeut":"T. Müller",
+                 "bericht":"Husten- und Atemübungen. PEP-Atemtherapie mit Flutter-VRP1. Patientin sehr motiviert. SpO₂ während Therapie stabil 91-93%.","kuerzel":"AQ"},
+            ]
+        }
+        with open(th_f, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+
+    # Protokolle
+    pr_f = os.path.join(DATA_DIR, f"protokolle_{pid}.json")
+    if not os.path.exists(pr_f):
+        data = {
+            "arztbriefe": [
+                {"id":"mab1","datum":"2026-05-20","titel":"Pneumologischer Befundbericht",
+                 "quelle":"Pneumologische Praxis Dr. Schmidt",
+                 "zusammenfassung":"Beatmungskontrolle: CPAP/BiPAP gut toleriert. FEV1 stabil bei 38%. Sauerstoffbedarf unverändert.",
+                 "volltext":"Befundbericht vom 20.05.2026\n\nPatientin: Maria Musterfrau, P-2024-0043\n\nDiagnose: COPD Gold IV mit hyperkapnischer Insuffizienz\n\nBeatmungsauslese: Beatmungsgerät Lumis 150 läuft regelgerecht. Mittlere Nutzungsdauer 9,2 h/Nacht. Leckage im Normbereich (12 L/min im Mittel). AHI 2,8/h.\n\nBeatmungseinstellung: IPAP 18 mbar, EPAP 8 mbar, Backup AF 14/min — unverändert adäquat.\n\nEmpfehlung: Beatmungseinstellungen beibehalten. Nächste Kontrolle in 3 Monaten.\n\nDr. P. Schmidt, Pneumologe"},
+                {"id":"mab2","datum":"2026-03-10","titel":"Hausarztbrief",
+                 "quelle":"Dr. E. Hoffmann",
+                 "zusammenfassung":"Quartalskontrolle. COPD stabil. Antibiose abgeschlossen. Ödeme rückläufig.",
+                 "volltext":"Hausarzt-Verlaufsbericht 10.03.2026\n\nPatientin: Maria Musterfrau\n\nZustand: Allgemeinzustand gebessert nach Infekt im Februar. Antibiose (Amoxicillin 5 Tage) abgeschlossen. Ödeme an Unterschenkeln rückläufig unter Furosemid.\n\nAtemwerte: SpO₂ 92-94% unter NIV stabil.\n\nFortführung aktuelle Medikation. Nächste Kontrolle in 6 Wochen.\n\nDr. E. Hoffmann"},
+            ],
+            "befunde": [
+                {"id":"mbf1","datum":"2026-04-08","titel":"Lungenfunktion + Blutgas",
+                 "quelle":"Pneumologisches Labor",
+                 "zusammenfassung":"FEV1 38% Soll. Hyperkapnie kompensiert. pH 7,38, pCO2 52 mmHg.",
+                 "volltext":"Lungenfunktionsuntersuchung und Blutgasanalyse 08.04.2026\n\nPatientin: Maria Musterfrau, 80 J.\n\nLungenfunktion:\nFVC: 1,12 l (42 % Soll)\nFEV1: 0,98 l (38 % Soll)\nTiffeneau: 87 %\nBefund: Schwere obstruktive Ventilationsstörung\n\nBlutgas (kapillär):\npH: 7,38\npCO₂: 52 mmHg (mäßige Hyperkapnie, kompensiert)\npO₂: 58 mmHg\nHCO₃: 31 mmol/l\nSaO₂: 91 %\n\nBeurteilung: Bekannte COPD Gold IV mit kompensierter respiratorischer Azidose. NIV-Therapie effektiv."},
+            ],
+            "ueberweisungen": [
+                {"id":"muw1","datum":"2026-06-15","titel":"Überweisung Pneumologie",
+                 "quelle":"Dr. E. Hoffmann",
+                 "zusammenfassung":"Beatmungskontrolle und Geräteauslese halbjährlich.",
+                 "volltext":"Überweisung 15.06.2026\n\nAn: Pneumologische Praxis Dr. Schmidt\n\nDiagnose: J44.1 — COPD mit akuter Exazerbation (stabil)\n\nBitte um Beatmungsauslese Lumis 150 und Überprüfung der Beatmungsparameter (halbjährliche Kontrolle).\n\nDr. E. Hoffmann"},
+            ],
+            "sonstiges": [
+                {"id":"ms1","datum":"2024-06-01","titel":"Pflegeplanung COPD",
+                 "quelle":"Pflegeteam",
+                 "zusammenfassung":"Pflegeziele und -maßnahmen bei COPD Gold IV.",
+                 "volltext":"Pflegeplanung — Maria Musterfrau — Stand: 01.06.2024\n\nPflegeziele:\n1. Atemwegssicherheit und NIV-Compliance sicherstellen\n2. Sekretmanagement optimieren (Inhalation 3x täglich)\n3. Beweglichkeit erhalten (Atemphysiotherapie)\n4. Ödemprophylaxe (Lagerung, Kompression, Furosemid)\n5. Soziale Teilhabe fördern (Sohn besucht regelmäßig)\n\nVerantwortlich: Sandra Krause, Pflegeleitung"},
+            ]
+        }
+        with open(pr_f, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+
+
 ensure_demo_patients()
 init_demo_data()
 init_demo_therapien()
@@ -952,6 +1044,7 @@ init_demo_sis()
 init_demo_pflegebericht()
 init_demo_ereignisse()
 init_demo_wunden()
+init_demo_maria()
 
 # ──────────────────────────────────────────
 # CONTEXT PROCESSOR
@@ -996,6 +1089,10 @@ def inject_global():
 # ──────────────────────────────────────────
 # ROUTEN
 # ──────────────────────────────────────────
+
+@app.route("/ping")
+def ping():
+    return jsonify({"ok": True})
 
 @app.route("/")
 def index():
@@ -1081,6 +1178,35 @@ def leistungsnachweis():
         gesamt=len(leistungen),
         aktiv="leistungsnachweis"
     )
+
+@app.route("/api/naechste-aktionen")
+def api_naechste_aktionen():
+    pid = get_current_patient_id()
+    leistungen = get_demo_leistungen(pid)
+    signoffs = get_leistungen_signoffs(pid)
+    now = datetime.now()
+    now_min = now.hour * 60 + now.minute
+    upcoming = []
+    for l in leistungen:
+        lid = f"{l['kuerzel']}_{l['zeit']}"
+        if lid in signoffs:
+            continue
+        try:
+            h, m = l['zeit'].split(':')
+            due_min = int(h) * 60 + int(m)
+        except Exception:
+            continue
+        minutes_to_due = due_min - now_min
+        if -30 <= minutes_to_due <= 120:
+            upcoming.append({
+                "leistung": l['leistung'],
+                "zeit": l['zeit'],
+                "kuerzel": l['kuerzel'],
+                "btm": l.get('btm', False),
+                "minutes_to_due": minutes_to_due
+            })
+    upcoming.sort(key=lambda x: x['minutes_to_due'])
+    return jsonify(upcoming[:4])
 
 @app.route("/beatmungsverordnung")
 def beatmungsverordnung():
@@ -1297,11 +1423,15 @@ def api_leistung_abzeichnen():
     fname   = os.path.join(DATA_DIR, f"leistungen_{pid}_{datum}.json")
     signoffs = json.load(open(fname, encoding="utf-8")) if os.path.exists(fname) else {}
     zeitstempel = datetime.now().strftime("%H:%M")
-    signoffs[payload.get("id","")] = {
-        "kuerzel": payload.get("kuerzel",""),
+    entry = {
+        "kuerzel":     payload.get("kuerzel",     ""),
         "zeitstempel": zeitstempel,
-        "begruendung": payload.get("begruendung","")
+        "begruendung": payload.get("begruendung", "")
     }
+    if payload.get("kuerzel2"):
+        entry["kuerzel2"]    = payload.get("kuerzel2")
+        entry["restmenge_ok"] = bool(payload.get("restmenge_ok", False))
+    signoffs[payload.get("id","")] = entry
     with open(fname, "w", encoding="utf-8") as f:
         json.dump(signoffs, f, ensure_ascii=False, indent=2)
     return jsonify({"ok": True, "zeitstempel": zeitstempel})
@@ -1555,6 +1685,14 @@ def api_kurve_zelle_loeschen():
     return jsonify({"ok": True})
 
 # ──────────────────────────────────────────
+# PROJEKT-PRÄSENTATION
+# ──────────────────────────────────────────
+
+@app.route("/projekt")
+def projekt():
+    return render_template("projekt.html", aktiv="projekt")
+
+# ──────────────────────────────────────────
 # SIS
 # ──────────────────────────────────────────
 
@@ -1626,12 +1764,14 @@ def api_pflegebericht_eintrag():
     eintraege = get_pflegebericht_data(pid)
     new_id = f"pb{len(eintraege)+1}_{int(datetime.now().timestamp())}"
     eintrag = {
-        "id":        new_id,
-        "datum":     payload.get("datum",     date.today().strftime("%Y-%m-%d")),
-        "uhrzeit":   payload.get("uhrzeit",   datetime.now().strftime("%H:%M")),
-        "kategorie": payload.get("kategorie", "Allgemein"),
-        "text":      payload.get("text",      ""),
-        "kuerzel":   payload.get("kuerzel",   "")
+        "id":          new_id,
+        "datum":       payload.get("datum",       date.today().strftime("%Y-%m-%d")),
+        "uhrzeit":     payload.get("uhrzeit",     datetime.now().strftime("%H:%M")),
+        "kategorie":   payload.get("kategorie",   "Allgemein"),
+        "text":        payload.get("text",        ""),
+        "kuerzel":     payload.get("kuerzel",     ""),
+        "schmerz":     payload.get("schmerz",     ""),
+        "lokalisation": payload.get("lokalisation", "")
     }
     eintraege.append(eintrag)
     with open(fname, "w", encoding="utf-8") as f:
@@ -1651,11 +1791,13 @@ def api_pflegebericht_eintrag_update(eintrag_id):
     payload = request.get_json(force=True)
     for e in eintraege:
         if e.get('id') == eintrag_id:
-            e['datum']     = payload.get('datum',     e.get('datum', ''))
-            e['uhrzeit']   = payload.get('uhrzeit',   e.get('uhrzeit', ''))
-            e['kategorie'] = payload.get('kategorie', e.get('kategorie', ''))
-            e['text']      = payload.get('text',      e.get('text', ''))
-            e['kuerzel']   = payload.get('kuerzel',   e.get('kuerzel', ''))
+            e['datum']        = payload.get('datum',        e.get('datum', ''))
+            e['uhrzeit']      = payload.get('uhrzeit',      e.get('uhrzeit', ''))
+            e['kategorie']    = payload.get('kategorie',    e.get('kategorie', ''))
+            e['text']         = payload.get('text',         e.get('text', ''))
+            e['kuerzel']      = payload.get('kuerzel',      e.get('kuerzel', ''))
+            e['schmerz']      = payload.get('schmerz',      e.get('schmerz', ''))
+            e['lokalisation'] = payload.get('lokalisation', e.get('lokalisation', ''))
             break
     with open(fname, "w", encoding="utf-8") as f:
         json.dump(eintraege, f, ensure_ascii=False, indent=2)
@@ -1809,6 +1951,206 @@ def api_wunde_update(wunde_id):
     with open(fname, "w", encoding="utf-8") as f:
         json.dump(wunden_liste, f, ensure_ascii=False, indent=2)
     return jsonify({"ok": True})
+
+# ──────────────────────────────────────────
+# FHIR DEMO
+# ──────────────────────────────────────────
+
+def build_fhir_resources(patient, today):
+    pid = patient['id']
+    parts = patient['name'].split(' ', 1)
+    family = parts[-1] if len(parts) > 1 else parts[0]
+    given  = parts[0]  if len(parts) > 1 else ""
+    gender = "male" if pid == "P-2024-0042" else "female"
+    bdate  = patient.get('geburtsdatum_iso', patient.get('geburtsdatum', ''))
+    return [
+        {
+            "resourceType": "Patient",
+            "id": pid,
+            "meta": {"profile": "http://hl7.org/fhir/StructureDefinition/Patient"},
+            "identifier": [{"system": "https://carebridge-demo.onrender.com/patienten", "value": pid}],
+            "name": [{"family": family, "given": [given]}],
+            "birthDate": bdate,
+            "gender": gender,
+            "address": [{"text": f"{patient.get('station','')}, {patient.get('zimmer','')}"}]
+        },
+        {
+            "resourceType": "Observation",
+            "id": f"obs-spo2-{pid[-4:]}",
+            "status": "final",
+            "category": [{"coding": [{"system": "http://terminology.hl7.org/CodeSystem/observation-category",
+                                       "code": "vital-signs", "display": "Vital Signs"}]}],
+            "code": {"coding": [{"system": "http://loinc.org", "code": "2708-6",
+                                  "display": "Sauerstoffsättigung (SpO₂)"}]},
+            "subject": {"reference": f"Patient/{pid}"},
+            "effectiveDateTime": f"{today}T07:00:00+01:00",
+            "valueQuantity": {"value": 96, "unit": "%",
+                              "system": "http://unitsofmeasure.org", "code": "%"}
+        },
+        {
+            "resourceType": "MedicationRequest",
+            "id": f"med-riluzol-{pid[-4:]}",
+            "status": "active",
+            "intent": "order",
+            "medicationCodeableConcept": {"coding": [{"system": "http://www.whocc.no/atc",
+                                                       "code": "N07XX02",
+                                                       "display": "Riluzol (Rilutek) 50mg"}]},
+            "subject": {"reference": f"Patient/{pid}"},
+            "dosageInstruction": [{
+                "timing": {"repeat": {"frequency": 2, "period": 1, "periodUnit": "d",
+                                      "timeOfDay": ["07:00", "19:00"]}},
+                "doseAndRate": [{"doseQuantity": {"value": 50, "unit": "mg"}}]
+            }]
+        },
+        {
+            "resourceType": "CarePlan",
+            "id": f"careplan-{pid}",
+            "status": "active",
+            "intent": "plan",
+            "subject": {"reference": f"Patient/{pid}"},
+            "period": {"start": "2026-01-01"},
+            "activity": [
+                {"detail": {"code": {"text": "Nächtliche Heimbeatmung"}, "status": "in-progress",
+                             "scheduledTiming": {"repeat": {"timeOfDay": ["22:00"],
+                                                            "duration": 10, "durationUnit": "h"}}}},
+                {"detail": {"code": {"text": "Trachealkanülenpflege"}, "status": "in-progress",
+                             "scheduledTiming": {"repeat": {"frequency": 1, "period": 1,
+                                                            "periodUnit": "d"}}}}
+            ]
+        }
+    ]
+
+@app.route("/fhir")
+def fhir():
+    patient = get_current_patient()
+    today   = date.today().strftime("%Y-%m-%d")
+    resources = build_fhir_resources(patient, today)
+    return render_template("fhir.html",
+        patient=patient, today=today,
+        resources=resources, aktiv="fhir")
+
+@app.route("/api/fhir/export")
+def api_fhir_export():
+    patient   = get_current_patient()
+    today     = date.today().strftime("%Y-%m-%d")
+    resources = build_fhir_resources(patient, today)
+    resp = jsonify(resources)
+    resp.headers['Content-Disposition'] = \
+        f'attachment; filename="fhir-{patient["id"]}-{today}.json"'
+    return resp
+
+# ──────────────────────────────────────────
+# QUALITÄTSDASHBOARD
+# ──────────────────────────────────────────
+
+def get_qualitaets_kennzahlen():
+    pid   = get_current_patient_id()
+    today = date.today()
+    tage  = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So']
+    labels = [tage[(today - timedelta(days=i)).weekday()] for i in range(6, -1, -1)]
+
+    # ── Heutige Leistungen (echt) ──
+    leistungen_heute = get_demo_leistungen(pid)
+    gesamt_heute     = len(leistungen_heute)
+    bestaetigt_heute = sum(1 for l in leistungen_heute if l['bestaetigt'])
+    offen_heute      = gesamt_heute - bestaetigt_heute
+    doku_heute       = round(bestaetigt_heute / gesamt_heute * 100) if gesamt_heute else 0
+
+    # ── Alarmereignisse diese Woche (echt) ──
+    woche_start  = (today - timedelta(days=today.weekday())).strftime('%Y-%m-%d')
+    ereignisse   = get_ereignisse_data(pid)
+    alarm_woche  = sum(1 for e in ereignisse if e.get('datum', '') >= woche_start)
+
+    # ── Persönliche Statistik (Wochenbasis + heute echt) ──
+    if pid == 'P-2024-0042':
+        pb = {
+            "AQ": {"leistungen": 35, "puenktlich": 33, "verspaetet": 2},
+            "SK": {"leistungen": 30, "puenktlich": 27, "verspaetet": 3},
+            "MB": {"leistungen": 25, "puenktlich": 22, "verspaetet": 3},
+        }
+    else:
+        pb = {
+            "SK": {"leistungen": 32, "puenktlich": 29, "verspaetet": 3},
+            "TM": {"leistungen": 28, "puenktlich": 24, "verspaetet": 4},
+            "AB": {"leistungen": 22, "puenktlich": 19, "verspaetet": 3},
+        }
+
+    signoffs = get_leistungen_signoffs(pid)
+    for lid, so in signoffs.items():
+        k = so.get('kuerzel', '')
+        if not k:
+            continue
+        if k not in pb:
+            pb[k] = {"leistungen": 0, "puenktlich": 0, "verspaetet": 0}
+        pb[k]['leistungen'] += 1
+        parts = lid.rsplit('_', 1)
+        is_pünktlich = True
+        if len(parts) == 2 and ':' in parts[1]:
+            try:
+                soll_min = int(parts[1][:2]) * 60 + int(parts[1][3:])
+                ist_zeit = so.get('zeitstempel', '')
+                ist_min  = int(ist_zeit[:2]) * 60 + int(ist_zeit[3:])
+                if ist_min - soll_min > 15:
+                    is_pünktlich = False
+            except Exception:
+                pass
+        if is_pünktlich:
+            pb[k]['puenktlich'] += 1
+        else:
+            pb[k]['verspaetet'] += 1
+
+    personal = []
+    for k, s in sorted(pb.items(), key=lambda x: -x[1]['leistungen']):
+        total = s['leistungen']
+        quote = round(s['puenktlich'] / total * 100, 1) if total else 0.0
+        personal.append({"kuerzel": k, "leistungen": total,
+                          "puenktlich": s['puenktlich'],
+                          "verspaetet": s['verspaetet'], "quote": quote})
+
+    # ── Patientenspez. Wochenhistorie (6 Vortage Demo + heute echt) ──
+    if pid == 'P-2024-0042':
+        doku_basis  = [91, 88, 95, 92, 89, 94]
+        comp_basis  = [95, 92, 98, 94, 90, 96]
+        alarm_typen = ["SpO₂-Abfall", "Beatmungsalarm", "Überf. Doku", "BTM-Warnung"]
+        alarm_demo  = [3, 1, 5, 2]
+        uq          = 87
+    else:
+        doku_basis  = [85, 82, 88, 84, 86, 83]
+        comp_basis  = [88, 85, 91, 87, 83, 89]
+        alarm_typen = ["SpO₂-Abfall", "Dyspnoe-Episode", "Überf. Doku", "Beatmungsalarm"]
+        alarm_demo  = [5, 3, 4, 1]
+        uq          = 81
+
+    doku_werte       = doku_basis + [doku_heute]
+    compliance_werte = comp_basis + [min(100, doku_heute + 3)]
+    alarm_gesamt     = alarm_woche if alarm_woche > 0 else (1 if pid == 'P-2024-0042' else 3)
+
+    doku_trend_val = doku_heute - doku_basis[-1]
+    doku_trend = f"+{doku_trend_val}%" if doku_trend_val >= 0 else f"{doku_trend_val}%"
+
+    return {
+        "patient_id":          pid,
+        "patient_name":        get_current_patient().get('name', ''),
+        "doku_quote":          doku_heute,
+        "doku_trend":          doku_trend,
+        "offene_leistungen":   offen_heute,
+        "offene_gesamt":       gesamt_heute,
+        "alarm_ereignisse":    alarm_gesamt,
+        "uebergabe_qualitaet": uq,
+        "woche_labels":        labels,
+        "doku_werte":          doku_werte,
+        "compliance_werte":    compliance_werte,
+        "alarm_typen":         alarm_typen,
+        "alarm_werte":         alarm_demo,
+        "personal":            personal,
+    }
+
+@app.route("/qualitaet")
+def qualitaet():
+    kn      = get_qualitaets_kennzahlen()
+    patient = get_current_patient()
+    return render_template("qualitaet.html", kn=kn, patient=patient, aktiv="qualitaet")
+
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5001))

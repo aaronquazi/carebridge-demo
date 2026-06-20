@@ -1,0 +1,357 @@
+{% extends "base.html" %}
+{% block title %}Qualitätsdashboard{% endblock %}
+{% block page_title %}Qualitätsdashboard — {{ patient.name }}{% endblock %}
+{% block page_subtitle %}Management-Übersicht · Dokumentationsqualität · {{ patient.zimmer }}{% endblock %}
+
+{% block content %}
+<style>
+  .qd-tile {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 20px 22px;
+    box-shadow: var(--shadow); position: relative; overflow: hidden;
+  }
+  .qd-tile::after {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  }
+  .qd-tile.ok::after  { background: var(--green); }
+  .qd-tile.warn::after { background: var(--amber); }
+  .qd-tile.info::after { background: var(--blue); }
+  .qd-tile.neutral::after { background: var(--ink-3); }
+  .qd-tile-label {
+    font-size: 10px; text-transform: uppercase; letter-spacing: 1px;
+    color: var(--ink-3); font-weight: 500; margin-bottom: 10px;
+  }
+  .qd-tile-value {
+    font-family: var(--mono); font-size: 34px; font-weight: 500;
+    color: var(--ink); line-height: 1; margin-bottom: 8px;
+  }
+  .qd-tile-sub {
+    font-size: 12px; color: var(--ink-3); display: flex; align-items: center; gap: 5px;
+  }
+  .qd-trend-up   { color: var(--green); font-weight: 600; }
+  .qd-trend-down { color: var(--red);   font-weight: 600; }
+  .qd-tile-icon {
+    position: absolute; right: 16px; top: 20px; font-size: 28px; opacity: 0.12;
+  }
+
+  /* Chart cards */
+  .qd-chart-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); box-shadow: var(--shadow); padding: 0;
+    overflow: hidden;
+  }
+  .qd-chart-header {
+    padding: 14px 18px; border-bottom: 1px solid var(--border-soft);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .qd-chart-title {
+    font-size: 13px; font-weight: 600; color: var(--ink);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .qd-chart-body { padding: 16px 18px; }
+  .qd-chart-canvas { width: 100%; height: 180px; }
+
+  /* Personal table */
+  .qd-table-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden;
+  }
+  .qd-table-header {
+    padding: 14px 18px; border-bottom: 1px solid var(--border-soft);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .qd-quote-bar {
+    height: 6px; border-radius: 3px; background: var(--border); overflow: hidden;
+    margin-top: 3px;
+  }
+  .qd-quote-fill {
+    height: 100%; border-radius: 3px; transition: width 0.5s;
+  }
+
+  /* Access note */
+  .qd-access-note {
+    display: flex; align-items: center; gap: 10px; padding: 12px 16px;
+    background: #F0F4FF; border: 1px solid #C7D7F5;
+    border-radius: var(--radius); font-size: 12px; color: #2A4A8A;
+    margin-bottom: 16px;
+  }
+</style>
+
+<!-- Leitungshinweis -->
+<div class="qd-access-note mb-16">
+  <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+  </svg>
+  Diese Ansicht ist für <strong>Pflegeleitung und Einrichtungsleitung</strong>. In der Produktivversion: Zugang nur mit Leitungsrechten.
+</div>
+
+<!-- Storage-Hinweis -->
+<div class="warn-banner mb-16" style="font-size:12px;align-items:flex-start">
+  <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="flex-shrink:0;margin-top:1px">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"/>
+  </svg>
+  <div>
+    <strong>Demo-Hinweis Datenspeicherung:</strong> Eingetragene Daten werden als JSON-Dateien gespeichert und sind innerhalb einer Session verfügbar.
+    Bei einem Server-Neustart oder Inaktivität können Daten zurückgesetzt werden.
+    In einer Produktivversion würde CareBridge eine verschlüsselte PostgreSQL-Datenbank mit Audit-Log verwenden — DSGVO-konform und dauerhaft.
+  </div>
+</div>
+
+<div class="warn-banner mb-16" style="font-size:12px">
+  ⚠ DEMO — Wochenverlauf (6 Vortage) sind Beispielwerte · Heutige Kennzahlen stammen aus echten Session-Daten
+</div>
+
+<!-- KPI Tiles -->
+<div class="grid-4 mb-20">
+
+  <div class="qd-tile ok">
+    <div class="qd-tile-icon">📊</div>
+    <div class="qd-tile-label">Dokumentationsquote</div>
+    <div class="qd-tile-value">{{ kn.doku_quote }}<span style="font-size:18px;color:var(--ink-3)">%</span></div>
+    <div class="qd-tile-sub">
+      <span class="qd-trend-up">↑ {{ kn.doku_trend }}</span> vs. gestern
+    </div>
+  </div>
+
+  <div class="qd-tile {% if kn.offene_leistungen == 0 %}ok{% elif kn.offene_leistungen <= 3 %}warn{% else %}alert{% endif %}">
+    <div class="qd-tile-icon">✅</div>
+    <div class="qd-tile-label">Offene Leistungen</div>
+    <div class="qd-tile-value">{{ kn.offene_leistungen }}</div>
+    <div class="qd-tile-sub">von {{ kn.offene_gesamt }} heute</div>
+  </div>
+
+  <div class="qd-tile {% if kn.alarm_ereignisse == 0 %}ok{% elif kn.alarm_ereignisse <= 2 %}warn{% else %}alert{% endif %}">
+    <div class="qd-tile-icon">⚠</div>
+    <div class="qd-tile-label">Alarmereignisse</div>
+    <div class="qd-tile-value">{{ kn.alarm_ereignisse }}</div>
+    <div class="qd-tile-sub">diese Woche</div>
+  </div>
+
+  <div class="qd-tile {% if kn.uebergabe_qualitaet >= 90 %}ok{% elif kn.uebergabe_qualitaet >= 75 %}warn{% else %}alert{% endif %}">
+    <div class="qd-tile-icon">🔄</div>
+    <div class="qd-tile-label">Übergabe-Qualität</div>
+    <div class="qd-tile-value">{{ kn.uebergabe_qualitaet }}<span style="font-size:18px;color:var(--ink-3)">%</span></div>
+    <div class="qd-tile-sub">SBAR vollständig</div>
+  </div>
+
+</div>
+
+<!-- Charts Row -->
+<div class="grid-2 mb-20">
+
+  <!-- Chart 1: Dokumentationsquote 7 Tage -->
+  <div class="qd-chart-card">
+    <div class="qd-chart-header">
+      <div class="qd-chart-title">
+        <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+        </svg>
+        Dokumentationsquote — letzte 7 Tage
+      </div>
+      <span class="badge badge-green">Ø {{ (kn.doku_werte | sum / kn.doku_werte | length) | round(1) }}%</span>
+    </div>
+    <div class="qd-chart-body">
+      <canvas id="chartDoku" class="qd-chart-canvas"></canvas>
+    </div>
+  </div>
+
+  <!-- Chart 2: Vitalzeichen-Compliance -->
+  <div class="qd-chart-card">
+    <div class="qd-chart-header">
+      <div class="qd-chart-title">
+        <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+        </svg>
+        Vitalzeichen-Compliance — letzte 7 Tage
+      </div>
+      <span class="badge badge-green">Ø {{ (kn.compliance_werte | sum / kn.compliance_werte | length) | round(1) }}%</span>
+    </div>
+    <div class="qd-chart-body">
+      <canvas id="chartCompliance" class="qd-chart-canvas"></canvas>
+    </div>
+  </div>
+
+</div>
+
+<!-- Donut + Table Row -->
+<div class="grid-2 mb-20">
+
+  <!-- Donut Chart -->
+  <div class="qd-chart-card">
+    <div class="qd-chart-header">
+      <div class="qd-chart-title">
+        <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"/>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"/>
+        </svg>
+        Alarmereignisse nach Typ
+      </div>
+      <span class="badge badge-gray">diese Woche</span>
+    </div>
+    <div class="qd-chart-body" style="display:flex;align-items:center;gap:20px">
+      <canvas id="chartAlarm" style="width:160px;height:160px;flex-shrink:0"></canvas>
+      <div id="alarm-legend" style="flex:1;font-size:12px"></div>
+    </div>
+  </div>
+
+  <!-- Personal Table -->
+  <div class="qd-table-card">
+    <div class="qd-table-header">
+      <div class="card-title">
+        <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+        </svg>
+        Dokumentation nach Pflegekraft — diese Woche
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Kürzel</th>
+            <th>Leistungen</th>
+            <th>Pünktlich</th>
+            <th>Verspätet</th>
+            <th>Quote</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in kn.personal %}
+          <tr>
+            <td><code style="font-family:var(--mono);font-size:12px;background:var(--surface-2);border:1px solid var(--border);padding:2px 7px;border-radius:3px">{{ p.kuerzel }}</code></td>
+            <td class="mono">{{ p.leistungen }}</td>
+            <td class="mono" style="color:var(--green)">{{ p.puenktlich }}</td>
+            <td class="mono" style="color:{% if p.verspaetet > 3 %}var(--red){% elif p.verspaetet > 1 %}var(--amber){% else %}var(--ink-3){% endif %}">{{ p.verspaetet }}</td>
+            <td>
+              <div style="font-family:var(--mono);font-size:12px;font-weight:500;color:{% if p.quote >= 95 %}var(--green){% elif p.quote >= 90 %}var(--amber){% else %}var(--red){% endif %}">{{ "%.1f"|format(p.quote) }}%</div>
+              <div class="qd-quote-bar" style="width:120px">
+                <div class="qd-quote-fill" style="width:{{ p.quote }}%;background:{% if p.quote >= 95 %}var(--green){% elif p.quote >= 90 %}var(--amber){% else %}var(--red){% endif %}"></div>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+Chart.defaults.font.family = "'IBM Plex Sans', sans-serif";
+Chart.defaults.font.size   = 11;
+Chart.defaults.color       = '#8A9BB0';
+
+const labels   = {{ kn.woche_labels | tojson }};
+const dokuData = {{ kn.doku_werte | tojson }};
+const compData = {{ kn.compliance_werte | tojson }};
+const alarmTypen  = {{ kn.alarm_typen | tojson }};
+const alarmWerte  = {{ kn.alarm_werte | tojson }};
+
+// Farben für Doku-Balken
+const dokuColors = dokuData.map(v =>
+  v >= 90 ? 'rgba(13,122,92,0.8)' : v >= 70 ? 'rgba(180,83,9,0.8)' : 'rgba(192,57,43,0.8)'
+);
+
+// Chart 1 — Dokumentationsquote (Bar)
+new Chart(document.getElementById('chartDoku').getContext('2d'), {
+  type: 'bar',
+  data: {
+    labels: labels,
+    datasets: [{
+      label: 'Doku-Quote %',
+      data: dokuData,
+      backgroundColor: dokuColors,
+      borderRadius: 3,
+      borderSkipped: false
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ctx.parsed.y + '%' } } },
+    scales: {
+      y: {
+        min: 60, max: 100,
+        ticks: { callback: v => v + '%', stepSize: 10 },
+        grid: { color: '#EAECF0' }
+      },
+      x: { grid: { display: false } }
+    }
+  }
+});
+
+// Chart 2 — Vitalzeichen-Compliance (Line)
+new Chart(document.getElementById('chartCompliance').getContext('2d'), {
+  type: 'line',
+  data: {
+    labels: labels,
+    datasets: [{
+      label: 'Compliance %',
+      data: compData,
+      borderColor: '#1A56DB',
+      backgroundColor: 'rgba(26,86,219,0.08)',
+      tension: 0.35,
+      fill: true,
+      pointBackgroundColor: '#1A56DB',
+      pointRadius: 4,
+      pointHoverRadius: 6,
+      borderWidth: 2
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ctx.parsed.y + '%' } } },
+    scales: {
+      y: {
+        min: 80, max: 100,
+        ticks: { callback: v => v + '%', stepSize: 5 },
+        grid: { color: '#EAECF0' }
+      },
+      x: { grid: { display: false } }
+    }
+  }
+});
+
+// Chart 3 — Alarmereignisse (Donut)
+const alarmColors = ['#C0392B','#B45309','#1A56DB','#7C3AED'];
+new Chart(document.getElementById('chartAlarm').getContext('2d'), {
+  type: 'doughnut',
+  data: {
+    labels: alarmTypen,
+    datasets: [{
+      data: alarmWerte,
+      backgroundColor: alarmColors,
+      borderWidth: 2,
+      borderColor: '#FFFFFF'
+    }]
+  },
+  options: {
+    responsive: false,
+    cutout: '62%',
+    plugins: {
+      legend: { display: false },
+      tooltip: { callbacks: { label: ctx => ctx.label + ': ' + ctx.parsed } }
+    }
+  }
+});
+
+// Legende manuell
+const leg = document.getElementById('alarm-legend');
+const total = alarmWerte.reduce((a,b) => a+b, 0);
+leg.innerHTML = alarmTypen.map((t, i) => `
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+    <div style="width:10px;height:10px;border-radius:2px;background:${alarmColors[i]};flex-shrink:0"></div>
+    <div>
+      <div style="font-size:12px;color:var(--ink)">${t}</div>
+      <div style="font-size:11px;color:var(--ink-3)">${alarmWerte[i]} Ereignisse · ${Math.round(alarmWerte[i]/total*100)}%</div>
+    </div>
+  </div>
+`).join('');
+</script>
+{% endblock %}

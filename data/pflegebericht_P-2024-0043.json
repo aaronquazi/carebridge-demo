@@ -1,0 +1,32 @@
+[
+  {
+    "id": "mpb1",
+    "datum": "2026-06-20",
+    "uhrzeit": "07:15",
+    "kategorie": "Allgemein",
+    "text": "Patientin hat gut geschlafen. COPD-bedingt erhöhte Atemfrequenz am Morgen (22/min), nach Inhalation gebessert auf 18/min. Allgemeinzustand stabil.",
+    "kuerzel": "SK",
+    "schmerz": "",
+    "lokalisation": ""
+  },
+  {
+    "id": "mpb2",
+    "datum": "2026-06-19",
+    "uhrzeit": "09:30",
+    "kategorie": "Beatmung",
+    "text": "Sekret: zähflüssig, gelblich. Absaugung 3x durchgeführt. Arzt über Sekretbeschaffenheit informiert. Dr. Hoffmann empfiehlt Intensivierung der Inhalation.",
+    "kuerzel": "SK",
+    "schmerz": "2",
+    "lokalisation": "Brust"
+  },
+  {
+    "id": "mpb3",
+    "datum": "2026-06-18",
+    "uhrzeit": "14:00",
+    "kategorie": "Pflege",
+    "text": "Lagerungswechsel durchgeführt. Patientin kooperativ. SpO₂ stabil bei 92–93% unter Beatmung. Keine Druckstellen. Mobilisation im Bett nach Plan.",
+    "kuerzel": "AQ",
+    "schmerz": "",
+    "lokalisation": ""
+  }
+]

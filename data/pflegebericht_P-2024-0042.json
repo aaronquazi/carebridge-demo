@@ -70,5 +70,23 @@
     "kategorie": "Allgemein",
     "text": "Test",
     "kuerzel": "AQ"
+  },
+  {
+    "id": "pb10_1781981259",
+    "datum": "2026-06-20",
+    "uhrzeit": "20:47",
+    "kategorie": "Beatmung",
+    "text": "Beatmung stabil",
+    "kuerzel": "AQ"
+  },
+  {
+    "id": "pb11_1781981461",
+    "datum": "2026-06-20",
+    "uhrzeit": "20:51",
+    "kategorie": "Beatmung",
+    "text": "Beatmung stabil. SpO2 96%.",
+    "kuerzel": "AQ",
+    "schmerz": 2,
+    "lokalisation": "keine"
   }
 ]

@@ -43,6 +43,25 @@
   .btn-undo { padding:3px 10px;border:1px solid #F59E0B;color:#B45309;border-radius:4px;background:transparent;font-size:11px;cursor:pointer;font-family:var(--sans);white-space:nowrap; }
   .btn-undo:hover { background:#FFFBEB; }
 
+  /* BTM-Alarm Banner */
+  .btm-alarm-banner {
+    display:none;position:fixed;top:0;left:0;right:0;z-index:2000;
+    background:#C0392B;color:#fff;padding:14px 20px;
+    display:none;align-items:center;justify-content:space-between;gap:16px;
+    box-shadow:0 4px 20px rgba(0,0,0,0.3);font-size:13px;font-weight:600;
+  }
+  .btm-alarm-banner.show { display:flex; }
+  .btn-btm-alarm-ok {
+    padding:6px 18px;background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.5);
+    border-radius:6px;color:#fff;font-weight:600;cursor:pointer;font-family:var(--sans);font-size:12px;
+    white-space:nowrap;
+  }
+  .btn-btm-alarm-ok:hover { background:rgba(255,255,255,0.3); }
+
+  /* BTM row highlight */
+  tr.btm-row td { border-left: 3px solid #C0392B; }
+  .badge-btm { background:#fee2e2;color:#C0392B;border:1px solid #FCA5A5;font-size:10px;padding:1px 6px;border-radius:3px;font-weight:600;margin-left:4px; }
+
   /* Schichtbemerkungen */
   .bemerk-box {
     background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
@@ -55,6 +74,12 @@
   .bemerk-meta { font-size:10px;color:var(--ink-3);margin-bottom:4px; }
   .bemerk-text { font-size:12px;color:var(--ink);line-height:1.5; }
 </style>
+
+<!-- BTM Alarm Banner -->
+<div class="btm-alarm-banner" id="btm-alarm-banner">
+  <span>🚨 BTM-GABE IN 10 MINUTEN — Vier-Augen-Prinzip vorbereiten. Restmenge prüfen.</span>
+  <button class="btn-btm-alarm-ok" onclick="dismissBTMAlarm()">Verstanden</button>
+</div>
 
 <!-- Fortschritt -->
 <div class="grid-3 mb-16">
@@ -105,9 +130,9 @@
       </thead>
       <tbody id="leistungen-tbody">
         {% for l in leistungen %}
-        <tr id="row-{{ loop.index0 }}" data-id="{{ l.kuerzel }}_{{ l.zeit }}" data-zeit="{{ l.zeit }}" data-bestaetigt="{{ 'true' if l.bestaetigt else 'false' }}" style="{% if not l.bestaetigt %}background:rgba(254,243,199,0.3){% endif %}">
+        <tr id="row-{{ loop.index0 }}" data-id="{{ l.kuerzel }}_{{ l.zeit }}" data-zeit="{{ l.zeit }}" data-bestaetigt="{{ 'true' if l.bestaetigt else 'false' }}" data-btm="{{ 'true' if l.btm else 'false' }}" class="{% if l.btm %}btm-row{% endif %}" style="{% if not l.bestaetigt %}background:rgba(254,243,199,0.3){% endif %}">
           <td class="mono" style="font-weight:500">{{ l.zeit }}</td>
-          <td class="text-sm" style="font-weight:{% if not l.bestaetigt %}500{% else %}400{% endif %}">{{ l.leistung }}</td>
+          <td class="text-sm" style="font-weight:{% if not l.bestaetigt %}500{% else %}400{% endif %}">{{ l.leistung }}{% if l.btm %}<span class="badge-btm">BTM</span>{% endif %}</td>
           <td><span class="badge badge-gray">{{ l.kuerzel }}</span></td>
           <td class="text-sm">
             {% if l.pflegekraft %}<span class="pflegekraft-cell">{{ l.pflegekraft }}</span>{% else %}<span class="text-muted pflegekraft-cell">—</span>{% endif %}
@@ -121,7 +146,7 @@
           </td>
           <td class="abz-cell">
             {% if not l.bestaetigt %}
-            <button class="btn-abz" onclick="openModal('{{ l.kuerzel }}_{{ l.zeit }}', '{{ l.leistung }}', '{{ l.zeit }}')">Abzeichnen</button>
+            <button class="btn-abz" onclick="openModal('{{ l.kuerzel }}_{{ l.zeit }}', '{{ l.leistung | replace("'","") }}', '{{ l.zeit }}', {{ 'true' if l.btm else 'false' }})">Abzeichnen</button>
             {% else %}
             <span class="text-xs text-muted">—</span>
             {% endif %}
@@ -209,6 +234,20 @@
       <textarea id="modal-begruendung" class="modal-input" rows="3" placeholder="Bitte begründen, warum die Dokumentation nachgetragen wird …"></textarea>
     </div>
 
+    <div id="modal-btm-section" style="display:none;border:1px solid #FCA5A5;border-radius:6px;padding:12px;background:#fff5f5;margin-bottom:4px">
+      <div style="font-size:11px;font-weight:700;color:#C0392B;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.5px">🔴 BTM — Vier-Augen-Prinzip erforderlich</div>
+      <div class="modal-row">
+        <label class="modal-label">Zweites Kürzel (Gegenzeichner) *</label>
+        <input id="modal-kuerzel2" class="modal-input" placeholder="z.B. SK" maxlength="4" style="font-family:var(--mono);font-weight:600;text-transform:uppercase" oninput="this.value=this.value.toUpperCase()">
+      </div>
+      <div class="modal-row" style="margin-bottom:0">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:var(--ink-2)">
+          <input type="checkbox" id="modal-restmenge" style="width:15px;height:15px;cursor:pointer">
+          Restmenge geprüft und dokumentiert *
+        </label>
+      </div>
+    </div>
+
     <div class="modal-footer">
       <button class="btn-modal-cancel" onclick="closeModal()">Abbrechen</button>
       <button class="btn-modal-ok" onclick="submitAbzeichnen()">Bestätigen</button>
@@ -222,18 +261,24 @@
 <script>
 let currentModalId   = null;
 let currentModalZeit = null;
+let currentModalBtm  = false;
 let signoffs         = {};
 let bemerkungen      = [];
 let bestaetigt       = {{ bestaetigt }};
 let gesamt           = {{ gesamt }};
+let btmAlarmDismissed = {};
 
 // ── Modal ──────────────────────────────────────────────────
-function openModal(id, leistung, zeit) {
+function openModal(id, leistung, zeit, isBtm) {
   currentModalId   = id;
   currentModalZeit = zeit;
+  currentModalBtm  = !!isBtm;
   document.getElementById('modal-leistung-name').textContent = leistung + ' · ' + zeit + ' Uhr';
   document.getElementById('modal-kuerzel').value = '';
   document.getElementById('modal-begruendung').value = '';
+  document.getElementById('modal-kuerzel2').value = '';
+  if (document.getElementById('modal-restmenge')) document.getElementById('modal-restmenge').checked = false;
+  document.getElementById('modal-btm-section').style.display = isBtm ? 'block' : 'none';
 
   const info = checkTimeWindow(zeit);
   const el   = document.getElementById('modal-time-info');
@@ -285,17 +330,32 @@ async function submitAbzeichnen() {
     if (!b) { document.getElementById('modal-begruendung').focus(); return; }
   }
 
+  if (currentModalBtm) {
+    const k2 = document.getElementById('modal-kuerzel2').value.trim();
+    if (!k2) { document.getElementById('modal-kuerzel2').focus(); return; }
+    if (k2.toUpperCase() === kuerzel.toUpperCase()) {
+      alert('BTM: Beide Kürzel müssen unterschiedlich sein (Vier-Augen-Prinzip).');
+      document.getElementById('modal-kuerzel2').focus();
+      return;
+    }
+    if (!document.getElementById('modal-restmenge').checked) {
+      alert('BTM: Bitte bestätigen Sie, dass die Restmenge geprüft wurde.');
+      return;
+    }
+  }
+
   const begruendung = document.getElementById('modal-begruendung').value.trim();
+  const kuerzel2    = currentModalBtm ? document.getElementById('modal-kuerzel2').value.trim() : '';
   try {
     const r = await fetch('/api/leistung/abzeichnen', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: currentModalId, kuerzel, begruendung })
+      body: JSON.stringify({ id: currentModalId, kuerzel, begruendung, btm: currentModalBtm, kuerzel2 })
     });
     const data = await r.json();
     if (data.ok) {
-      signoffs[currentModalId] = { kuerzel, zeitstempel: data.zeitstempel, begruendung };
-      markRowDone(currentModalId, kuerzel, data.zeitstempel, true);
+      signoffs[currentModalId] = { kuerzel, zeitstempel: data.zeitstempel, begruendung, btm: currentModalBtm, kuerzel2 };
+      markRowDone(currentModalId, kuerzel, data.zeitstempel, true, currentModalBtm, kuerzel2);
       closeModal();
     }
   } catch(e) {}
@@ -312,11 +372,12 @@ function isWithin10Min(zeitstempel) {
   return diff >= 0 && diff <= 10;
 }
 
-function markRowDone(id, kuerzel, zeitstempel, canUndo) {
+function markRowDone(id, kuerzel, zeitstempel, canUndo, isBtm, kuerzel2) {
   const row = document.querySelector(`tr[data-id="${id}"]`);
   if (!row) return;
   row.style.background = '';
-  row.querySelector('.status-cell').innerHTML = `<span class="badge badge-green">✓ ${kuerzel} ${zeitstempel}</span>`;
+  const btmSuffix = isBtm ? ` + ${kuerzel2} · BTM ✓` : '';
+  row.querySelector('.status-cell').innerHTML = `<span class="badge badge-green">✓ ${kuerzel}${btmSuffix} ${zeitstempel}</span>`;
   const showUndo = canUndo !== undefined ? canUndo : isWithin10Min(zeitstempel);
   row.querySelector('.abz-cell').innerHTML = showUndo
     ? `<button class="btn-undo" onclick="rueckgaengigMachen('${id}')">↩ Rückgängig</button>`
@@ -434,6 +495,52 @@ async function saveBemerkung() {
 function esc(s) {
   return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
+
+// ── BTM Alarm ─────────────────────────────────────────────
+function playBTMAlarm() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    [0, 0.4, 0.8].forEach(delay => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.frequency.value = 880;
+      osc.type = 'sine';
+      gain.gain.setValueAtTime(0.4, ctx.currentTime + delay);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + 0.3);
+      osc.start(ctx.currentTime + delay);
+      osc.stop(ctx.currentTime + delay + 0.35);
+    });
+  } catch(e) {}
+}
+
+function dismissBTMAlarm() {
+  document.getElementById('btm-alarm-banner').classList.remove('show');
+}
+
+function checkBTMAlarm() {
+  const rows = document.querySelectorAll('tr[data-btm="true"]');
+  const now = new Date();
+  const nowMin = now.getHours() * 60 + now.getMinutes();
+  rows.forEach(row => {
+    if (row.dataset.bestaetigt === 'true') return;
+    const id = row.dataset.id;
+    if (btmAlarmDismissed[id]) return;
+    const zeitStr = row.dataset.zeit;
+    const [h, m] = zeitStr.split(':').map(Number);
+    const dueMin = h * 60 + m;
+    const diff = dueMin - nowMin;
+    if (diff >= 9 && diff <= 11) {
+      btmAlarmDismissed[id] = true;
+      document.getElementById('btm-alarm-banner').classList.add('show');
+      playBTMAlarm();
+    }
+  });
+}
+
+setInterval(checkBTMAlarm, 60000);
+checkBTMAlarm();
 
 // ── Init ──────────────────────────────────────────────────
 loadSignoffs();

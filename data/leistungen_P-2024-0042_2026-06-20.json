@@ -33,5 +33,17 @@
     "kuerzel": "AQ",
     "zeitstempel": "10:03",
     "begruendung": ""
+  },
+  "GKP": {
+    "kuerzel": "AQ",
+    "zeitstempel": "20:47",
+    "begruendung": ""
+  },
+  "MED": {
+    "kuerzel": "AQ",
+    "zeitstempel": "20:51",
+    "begruendung": "",
+    "kuerzel2": "SK",
+    "restmenge_ok": true
   }
 }

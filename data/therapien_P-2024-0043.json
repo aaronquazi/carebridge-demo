@@ -1,0 +1,49 @@
+{
+  "verordnungen": [
+    {
+      "id": "mt1",
+      "typ": "Atemphysiotherapie",
+      "frequenz": "3x/Woche",
+      "therapeut": "T. Müller",
+      "seit": "2024-04-01",
+      "ziel": "Sekretmobilisation und Atemmuskelkräftigung"
+    },
+    {
+      "id": "mt2",
+      "typ": "Ergotherapie",
+      "frequenz": "1x/Woche",
+      "therapeut": "S. Klein",
+      "seit": "2024-05-15",
+      "ziel": "Selbstständigkeit im Alltag erhalten"
+    }
+  ],
+  "eintraege": [
+    {
+      "id": "me1",
+      "datum": "2026-06-19",
+      "uhrzeit": "10:00",
+      "typ": "Atemphysiotherapie",
+      "therapeut": "T. Müller",
+      "bericht": "Atemübungen durchgeführt. Vibrationsmassage zur Sekretlösung. Patientin toleriert Maßnahmen gut. Deutliche Sekretmobilisation.",
+      "kuerzel": "SK"
+    },
+    {
+      "id": "me2",
+      "datum": "2026-06-16",
+      "uhrzeit": "11:30",
+      "typ": "Ergotherapie",
+      "therapeut": "S. Klein",
+      "bericht": "Alltagstraining: Trinkbecher selbstständig halten. Feinmotorik leicht eingeschränkt. Übungen für die Hände durchgeführt.",
+      "kuerzel": "SK"
+    },
+    {
+      "id": "me3",
+      "datum": "2026-06-15",
+      "uhrzeit": "10:00",
+      "typ": "Atemphysiotherapie",
+      "therapeut": "T. Müller",
+      "bericht": "Husten- und Atemübungen. PEP-Atemtherapie mit Flutter-VRP1. Patientin sehr motiviert. SpO₂ während Therapie stabil 91-93%.",
+      "kuerzel": "AQ"
+    }
+  ]
+}

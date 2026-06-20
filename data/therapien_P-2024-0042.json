@@ -70,6 +70,15 @@
       "therapeut": "dr Quazi",
       "bericht": "alles läuft super",
       "kuerzel": ""
+    },
+    {
+      "id": "e6_1781981283",
+      "datum": "2026-06-20",
+      "uhrzeit": "20:48",
+      "typ": "Physiotherapie",
+      "therapeut": "T. Mueller",
+      "bericht": "",
+      "kuerzel": ""
     }
   ]
 }

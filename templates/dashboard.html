@@ -58,6 +58,17 @@
 </div>
 {% endif %}
 
+<!-- Nächste fällige Aktionen -->
+<div class="card mb-16" id="naechste-aktionen-card">
+  <div class="card-header">
+    <div class="card-title">⏱ Nächste fällige Aktionen</div>
+    <span class="badge badge-gray" id="aktionen-count">—</span>
+  </div>
+  <div id="aktionen-list" style="padding:0 16px 12px">
+    <div style="color:var(--ink-3);font-size:12px;padding:12px 0">Wird geladen …</div>
+  </div>
+</div>
+
 <!-- Patient Info -->
 <div class="card mb-16">
   <div class="card-header">
@@ -93,6 +104,7 @@
   <div class="stat-tile {% if letzter.spo2 and letzter.spo2 >= 92 %}ok{% elif letzter.spo2 and letzter.spo2 >= 88 %}warn{% else %}alert{% endif %}">
     <div class="stat-label">SpO₂</div>
     <div class="stat-value">{{ letzter.spo2 or '—' }}<span class="stat-unit">%</span></div>
+    <div id="trend-spo2" style="min-height:16px"></div>
     <div class="stat-status">
       <span class="dot {% if letzter.spo2 and letzter.spo2 >= 92 %}dot-green{% else %}dot-amber{% endif %}"></span>
       <span class="text-xs text-muted">Alarmgrenze &gt; 88%</span>
@@ -102,6 +114,7 @@
   <div class="stat-tile {% if letzter.puls and 50 <= letzter.puls <= 100 %}ok{% else %}warn{% endif %}">
     <div class="stat-label">Puls</div>
     <div class="stat-value">{{ letzter.puls or '—' }}<span class="stat-unit">/min</span></div>
+    <div id="trend-puls" style="min-height:16px"></div>
     <div class="stat-status">
       <span class="dot dot-green"></span>
       <span class="text-xs text-muted">{{ letzter.blutdruck or '—' }} mmHg</span>
@@ -109,20 +122,22 @@
   </div>
 
   <div class="stat-tile ok">
-    <div class="stat-label">Beatmung</div>
-    <div class="stat-value" style="font-size:18px">Aktiv</div>
+    <div class="stat-label">Beatmung Vt</div>
+    <div class="stat-value" style="font-size:18px">{{ letzter.tidalvolumen or '—' }}<span class="stat-unit">ml</span></div>
+    <div id="trend-vt" style="min-height:16px"></div>
     <div class="stat-status">
       <span class="dot dot-green"></span>
-      <span class="text-xs text-muted">IPAP {{ letzter.ipap or '—' }} mbar · Vt {{ letzter.tidalvolumen or '—' }} ml</span>
+      <span class="text-xs text-muted">IPAP {{ letzter.ipap or '—' }} mbar · Soll 600 ml</span>
     </div>
   </div>
 
   <div class="stat-tile {% if leistungen_offen == 0 %}ok{% elif leistungen_offen <= 2 %}warn{% else %}alert{% endif %}">
-    <div class="stat-label">Offene Leistungen</div>
-    <div class="stat-value">{{ leistungen_offen }}</div>
+    <div class="stat-label">Leckage</div>
+    <div class="stat-value">{{ letzter.leckage or '—' }}<span class="stat-unit">L/min</span></div>
+    <div id="trend-leckage" style="min-height:16px"></div>
     <div class="stat-status">
-      <span class="dot {% if leistungen_offen == 0 %}dot-green{% elif leistungen_offen <= 2 %}dot-amber{% else %}dot-red{% endif %}"></span>
-      <span class="text-xs text-muted"><a href="/leistungsnachweis" style="color:inherit">Leistungsnachweis öffnen →</a></span>
+      <span class="dot {% if letzter.leckage and letzter.leckage <= 40 %}dot-green{% else %}dot-amber{% endif %}"></span>
+      <span class="text-xs text-muted">Max: 40 L/min · <a href="/leistungsnachweis" style="color:inherit">Leistungen ({{ leistungen_offen }} offen)</a></span>
     </div>
   </div>
 </div>
@@ -199,5 +214,90 @@
 <script>
   const _msg = sessionStorage.getItem('new_patient_alert');
   if (_msg) { sessionStorage.removeItem('new_patient_alert'); alert(_msg); }
+
+  // ── Nächste fällige Aktionen ─────────────────────────────
+  async function loadNaechsteAktionen() {
+    try {
+      const r = await fetch('/api/naechste-aktionen');
+      const data = await r.json();
+      const list = document.getElementById('aktionen-list');
+      const count = document.getElementById('aktionen-count');
+      count.textContent = data.length + ' anstehend';
+      if (data.length === 0) {
+        list.innerHTML = '<div style="color:var(--ink-3);font-size:12px;padding:12px 0">Keine anstehenden Aktionen in den nächsten 2 Stunden.</div>';
+        return;
+      }
+      list.innerHTML = data.map(a => {
+        const isBtm = a.btm;
+        const diff = a.minutes_to_due;
+        let timeLabel, timeCls;
+        if (diff < 0) {
+          timeLabel = `${Math.abs(diff)} Min. überfällig`;
+          timeCls = 'color:#C0392B;font-weight:700';
+        } else if (diff <= 15) {
+          timeLabel = `in ${diff} Min.`;
+          timeCls = 'color:#B45309;font-weight:600';
+        } else {
+          timeLabel = `in ${diff} Min.`;
+          timeCls = 'color:var(--ink-3)';
+        }
+        const btmTag = isBtm ? ' <span style="background:#fee2e2;color:#C0392B;border:1px solid #FCA5A5;font-size:10px;padding:1px 5px;border-radius:3px;font-weight:700">BTM</span>' : '';
+        return `<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border-soft)">
+          <div>
+            <span style="font-size:12px;font-weight:${isBtm?'700':'500'};color:${isBtm?'#C0392B':'var(--ink)'}">${a.zeit} Uhr · ${a.leistung}</span>${btmTag}
+          </div>
+          <span style="font-size:11px;${timeCls};white-space:nowrap;margin-left:12px">${timeLabel}</span>
+        </div>`;
+      }).join('');
+    } catch(e) {}
+  }
+  loadNaechsteAktionen();
+
+  // ── Trend-Pfeile ─────────────────────────────────────────
+  async function loadTrends() {
+    try {
+      const r = await fetch('/api/kurve/load');
+      const kurve = await r.json();
+
+      function getLastTwo(key) {
+        const group = kurve[key] || {};
+        const entries = Object.entries(group)
+          .filter(([,v]) => v && String(v).trim())
+          .map(([h,v]) => ({ h: parseInt(h), v: parseFloat(v) }))
+          .filter(x => !isNaN(x.v))
+          .sort((a,b) => a.h - b.h);
+        if (entries.length >= 2) return [entries[entries.length-2].v, entries[entries.length-1].v];
+        if (entries.length === 1) return [null, entries[0].v];
+        return [null, null];
+      }
+
+      function renderTrend(id, prev, curr, higherIsBetter, unit, threshold) {
+        const el = document.getElementById(id);
+        if (!el || prev === null || curr === null) return;
+        const diff = curr - prev;
+        if (Math.abs(diff) < (threshold || 0.5)) {
+          el.innerHTML = `<span style="color:var(--ink-3);font-size:11px">→ stabil</span>`;
+          return;
+        }
+        const up = diff > 0;
+        const good = up === higherIsBetter;
+        const arrow = up ? '↑' : '↓';
+        const sign = up ? '+' : '';
+        const color = good ? 'var(--green)' : 'var(--red)';
+        el.innerHTML = `<span style="color:${color};font-size:11px;font-weight:600">${arrow} ${sign}${Math.round(Math.abs(diff)*10)/10}${unit}</span>`;
+      }
+
+      const [spo2p, spo2c] = getLastTwo('spo2');
+      const [hfp, hfc] = getLastTwo('hf');
+      const [vtp, vtc] = getLastTwo('vt');
+      const [lkp, lkc] = getLastTwo('leckage');
+
+      renderTrend('trend-spo2',    spo2p, spo2c, true,  '%',    1);
+      renderTrend('trend-puls',    hfp,   hfc,   false, '/min', 2);
+      renderTrend('trend-vt',      vtp,   vtc,   true,  'ml',   10);
+      renderTrend('trend-leckage', lkp,   lkc,   false, 'L/min',1);
+    } catch(e) {}
+  }
+  loadTrends();
 </script>
 {% endblock %}

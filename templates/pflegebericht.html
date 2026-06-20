@@ -97,6 +97,24 @@
   .kat-badge-Medikamente { background:#F3E8FF; color:#7C3AED; }
   .kat-badge-Besonderheit{ background:var(--amber-light); color:var(--amber); }
   .kat-badge-Arzt        { background:var(--red-light); color:var(--red); }
+
+  /* NRS Schmerzskala */
+  .nrs-scale {
+    display: flex; gap: 4px; flex-wrap: wrap; margin-top: 6px;
+  }
+  .nrs-btn {
+    width: 36px; height: 36px; border: 1px solid var(--border); border-radius: 6px;
+    background: var(--surface-2); font-size: 12px; font-weight: 600; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--mono); transition: all 0.1s;
+  }
+  .nrs-btn:hover { filter: brightness(0.95); }
+  .nrs-btn.nrs-0, .nrs-btn.nrs-1, .nrs-btn.nrs-2, .nrs-btn.nrs-3 { background:#dcfce7; border-color:#86efac; color:#166534; }
+  .nrs-btn.nrs-4, .nrs-btn.nrs-5, .nrs-btn.nrs-6 { background:#fef3c7; border-color:#fbbf24; color:#92400e; }
+  .nrs-btn.nrs-7, .nrs-btn.nrs-8, .nrs-btn.nrs-9, .nrs-btn.nrs-10 { background:#fee2e2; border-color:#fca5a5; color:#C0392B; }
+  .nrs-btn.selected { outline: 2px solid var(--blue); outline-offset: 1px; transform: scale(1.1); }
+  .nrs-emoji { display: flex; justify-content: space-between; font-size: 16px; margin-top: 4px; padding: 0 2px; }
+  .nrs-warn { background:#fee2e2;border:1px solid #fca5a5;border-radius:var(--radius);padding:8px 12px;font-size:12px;color:#C0392B;font-weight:500;margin-top:8px;display:none; }
 </style>
 
 <!-- Toolbar -->
@@ -146,7 +164,7 @@
         <button class="pb-btn-sm pb-btn-del" onclick="confirmDelete('{{ e.id }}','{{ e.titel | default(e.kategorie) }}')">🗑</button>
       </div>
     </div>
-    <div class="pb-entry-text">{{ e.text }}</div>
+    <div class="pb-entry-text">{{ e.text }}{% if e.schmerz is defined and e.schmerz is not none and e.schmerz != '' %}<div style="margin-top:6px;font-size:11px;color:{% if e.schmerz|int >= 7 %}#C0392B{% elif e.schmerz|int >= 4 %}#B45309{% else %}var(--green){% endif %};font-weight:500">Schmerz: {{ e.schmerz }}/10{% if e.lokalisation %} · Lokalisation: {{ e.lokalisation }}{% endif %}</div>{% endif %}</div>
   </div>
   {% endfor %}
 {% else %}
@@ -190,6 +208,18 @@
         </div>
       </div>
       <div class="form-row">
+        <label class="form-label">Schmerzskala NRS (optional)</label>
+        <div class="nrs-scale" id="nrs-scale">
+          {% for i in range(11) %}<button type="button" class="nrs-btn nrs-{{ i }}" onclick="selectNRS({{ i }})">{{ i }}</button>{% endfor %}
+        </div>
+        <div class="nrs-emoji"><span>😊</span><span>😐</span><span>😢</span></div>
+        <div class="nrs-warn" id="nrs-warn">⚠ Starke Schmerzen (NRS ≥ 7) — Arzt informieren empfohlen</div>
+      </div>
+      <div class="form-row" id="nrs-lokalisations-row" style="display:none">
+        <label class="form-label">Schmerzlokalisation (optional)</label>
+        <input type="text" class="form-control" id="pb-lokalisation" placeholder="z.B. linker Arm, Rücken …">
+      </div>
+      <div class="form-row">
         <label class="form-label">Eintrag *</label>
         <textarea class="form-control" id="pb-text" rows="5" style="resize:vertical"
           placeholder="Pflegebericht-Eintrag..."></textarea>
@@ -219,6 +249,23 @@
 <script>
   let _editId = null;
   let _deleteId = null;
+  let _nrsValue = null;
+
+  function selectNRS(val) {
+    _nrsValue = val;
+    document.querySelectorAll('.nrs-btn').forEach(b => b.classList.remove('selected'));
+    document.querySelector(`.nrs-btn.nrs-${val}`).classList.add('selected');
+    document.getElementById('nrs-warn').style.display = val >= 7 ? 'block' : 'none';
+    document.getElementById('nrs-lokalisations-row').style.display = val !== null ? 'block' : 'none';
+  }
+
+  function resetNRS() {
+    _nrsValue = null;
+    document.querySelectorAll('.nrs-btn').forEach(b => b.classList.remove('selected'));
+    document.getElementById('nrs-warn').style.display = 'none';
+    document.getElementById('nrs-lokalisations-row').style.display = 'none';
+    document.getElementById('pb-lokalisation').value = '';
+  }
 
   function openModal() {
     _editId = null;
@@ -228,6 +275,7 @@
     document.getElementById('pb-kategorie').value = 'Allgemein';
     document.getElementById('pb-kuerzel').value = '';
     document.getElementById('pb-text').value = '';
+    resetNRS();
     document.getElementById('modal-pb').classList.add('open');
   }
 
@@ -239,6 +287,11 @@
     document.getElementById('pb-kategorie').value = e.kategorie || 'Allgemein';
     document.getElementById('pb-kuerzel').value = e.kuerzel || '';
     document.getElementById('pb-text').value = e.text || '';
+    resetNRS();
+    if (e.schmerz !== undefined && e.schmerz !== null && e.schmerz !== '') {
+      selectNRS(parseInt(e.schmerz));
+      document.getElementById('pb-lokalisation').value = e.lokalisation || '';
+    }
     document.getElementById('modal-pb').classList.add('open');
   }
 
@@ -248,11 +301,13 @@
     const text = document.getElementById('pb-text').value.trim();
     if (!text) { alert('Bitte Eintrag ausfüllen.'); return; }
     const body = {
-      datum:     document.getElementById('pb-datum').value,
-      uhrzeit:   document.getElementById('pb-uhrzeit').value,
-      kategorie: document.getElementById('pb-kategorie').value,
-      kuerzel:   document.getElementById('pb-kuerzel').value,
-      text
+      datum:       document.getElementById('pb-datum').value,
+      uhrzeit:     document.getElementById('pb-uhrzeit').value,
+      kategorie:   document.getElementById('pb-kategorie').value,
+      kuerzel:     document.getElementById('pb-kuerzel').value,
+      text,
+      schmerz:     _nrsValue !== null ? _nrsValue : '',
+      lokalisation: _nrsValue !== null ? (document.getElementById('pb-lokalisation').value || '') : ''
     };
     const url    = _editId ? `/api/pflegebericht/eintrag/${_editId}` : '/api/pflegebericht/eintrag';
     const method = _editId ? 'PUT' : 'POST';

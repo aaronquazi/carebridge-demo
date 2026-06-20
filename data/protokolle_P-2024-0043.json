@@ -1,0 +1,50 @@
+{
+  "arztbriefe": [
+    {
+      "id": "mab1",
+      "datum": "2026-05-20",
+      "titel": "Pneumologischer Befundbericht",
+      "quelle": "Pneumologische Praxis Dr. Schmidt",
+      "zusammenfassung": "Beatmungskontrolle: CPAP/BiPAP gut toleriert. FEV1 stabil bei 38%. Sauerstoffbedarf unverändert.",
+      "volltext": "Befundbericht vom 20.05.2026\n\nPatientin: Maria Musterfrau, P-2024-0043\n\nDiagnose: COPD Gold IV mit hyperkapnischer Insuffizienz\n\nBeatmungsauslese: Beatmungsgerät Lumis 150 läuft regelgerecht. Mittlere Nutzungsdauer 9,2 h/Nacht. Leckage im Normbereich (12 L/min im Mittel). AHI 2,8/h.\n\nBeatmungseinstellung: IPAP 18 mbar, EPAP 8 mbar, Backup AF 14/min — unverändert adäquat.\n\nEmpfehlung: Beatmungseinstellungen beibehalten. Nächste Kontrolle in 3 Monaten.\n\nDr. P. Schmidt, Pneumologe"
+    },
+    {
+      "id": "mab2",
+      "datum": "2026-03-10",
+      "titel": "Hausarztbrief",
+      "quelle": "Dr. E. Hoffmann",
+      "zusammenfassung": "Quartalskontrolle. COPD stabil. Antibiose abgeschlossen. Ödeme rückläufig.",
+      "volltext": "Hausarzt-Verlaufsbericht 10.03.2026\n\nPatientin: Maria Musterfrau\n\nZustand: Allgemeinzustand gebessert nach Infekt im Februar. Antibiose (Amoxicillin 5 Tage) abgeschlossen. Ödeme an Unterschenkeln rückläufig unter Furosemid.\n\nAtemwerte: SpO₂ 92-94% unter NIV stabil.\n\nFortführung aktuelle Medikation. Nächste Kontrolle in 6 Wochen.\n\nDr. E. Hoffmann"
+    }
+  ],
+  "befunde": [
+    {
+      "id": "mbf1",
+      "datum": "2026-04-08",
+      "titel": "Lungenfunktion + Blutgas",
+      "quelle": "Pneumologisches Labor",
+      "zusammenfassung": "FEV1 38% Soll. Hyperkapnie kompensiert. pH 7,38, pCO2 52 mmHg.",
+      "volltext": "Lungenfunktionsuntersuchung und Blutgasanalyse 08.04.2026\n\nPatientin: Maria Musterfrau, 80 J.\n\nLungenfunktion:\nFVC: 1,12 l (42 % Soll)\nFEV1: 0,98 l (38 % Soll)\nTiffeneau: 87 %\nBefund: Schwere obstruktive Ventilationsstörung\n\nBlutgas (kapillär):\npH: 7,38\npCO₂: 52 mmHg (mäßige Hyperkapnie, kompensiert)\npO₂: 58 mmHg\nHCO₃: 31 mmol/l\nSaO₂: 91 %\n\nBeurteilung: Bekannte COPD Gold IV mit kompensierter respiratorischer Azidose. NIV-Therapie effektiv."
+    }
+  ],
+  "ueberweisungen": [
+    {
+      "id": "muw1",
+      "datum": "2026-06-15",
+      "titel": "Überweisung Pneumologie",
+      "quelle": "Dr. E. Hoffmann",
+      "zusammenfassung": "Beatmungskontrolle und Geräteauslese halbjährlich.",
+      "volltext": "Überweisung 15.06.2026\n\nAn: Pneumologische Praxis Dr. Schmidt\n\nDiagnose: J44.1 — COPD mit akuter Exazerbation (stabil)\n\nBitte um Beatmungsauslese Lumis 150 und Überprüfung der Beatmungsparameter (halbjährliche Kontrolle).\n\nDr. E. Hoffmann"
+    }
+  ],
+  "sonstiges": [
+    {
+      "id": "ms1",
+      "datum": "2024-06-01",
+      "titel": "Pflegeplanung COPD",
+      "quelle": "Pflegeteam",
+      "zusammenfassung": "Pflegeziele und -maßnahmen bei COPD Gold IV.",
+      "volltext": "Pflegeplanung — Maria Musterfrau — Stand: 01.06.2024\n\nPflegeziele:\n1. Atemwegssicherheit und NIV-Compliance sicherstellen\n2. Sekretmanagement optimieren (Inhalation 3x täglich)\n3. Beweglichkeit erhalten (Atemphysiotherapie)\n4. Ödemprophylaxe (Lagerung, Kompression, Furosemid)\n5. Soziale Teilhabe fördern (Sohn besucht regelmäßig)\n\nVerantwortlich: Sandra Krause, Pflegeleitung"
+    }
+  ]
+}

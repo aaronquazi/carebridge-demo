@@ -4,7 +4,7 @@
     "typ": "Tracheostomawunde",
     "lokalisation": "Trachea anterior, zervikaler Bereich",
     "erstbefund": "2022-11-01",
-    "aktueller_status": "gruen",
+    "aktueller_status": "gelb",
     "zusammenfassung": "Tracheostoma seit 11/2022. Reizlos, regelgerecht verheilt. Regelmäßige Pflege und Kontrolle.",
     "verlauf": [
       {
@@ -38,6 +38,17 @@
         "umgebung": "reizlos",
         "behandlung": "Routinepflege",
         "status": "gruen",
+        "kuerzel": "AQ"
+      },
+      {
+        "id": "wv4_1781981283",
+        "datum": "2026-06-20",
+        "groesse": "",
+        "wundgrund": "",
+        "exsudat": "",
+        "umgebung": "",
+        "behandlung": "",
+        "status": "gelb",
         "kuerzel": "AQ"
       }
     ]

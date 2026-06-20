@@ -4,5 +4,11 @@
     "kuerzel": "AQ",
     "schicht": "Frühdienst",
     "text": "Patient hat gut geschlafen. Beatmung lief regelgerecht über Nacht. SpO₂ stabil zwischen 95–97%. Um 11:00 kurzer SpO₂-Abfall auf 91% bei Lagerungswechsel, danach wieder normalisiert. Sekret: weißlich, mäßig. Absaugung 2x durchgeführt."
+  },
+  {
+    "zeitstempel": "20:47",
+    "kuerzel": "AQ",
+    "schicht": "Fruehdienst",
+    "text": "Ruhige Schicht. Beatmung stabil."
   }
 ]

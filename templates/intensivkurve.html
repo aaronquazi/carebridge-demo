@@ -154,6 +154,12 @@
   .kurve-cell.overdue      { background: rgba(180,83,9,0.09) !important; }
   .kurve-cell.pflicht-rot  { background: #FEE2E2 !important; border: 1px solid #FCA5A5 !important; }
   .kurve-cell.pflicht-rot input::placeholder { color: #FCA5A5; }
+  .kurve-cell.temp-fieber  { background: #fee2e2 !important; }
+  .kurve-cell.temp-erhoht  { background: #fef3c7 !important; }
+  .kurve-cell.temp-kalt    { background: #dbeafe !important; }
+  .kurve-cell.temp-fieber input { color: #C0392B !important; font-weight: 700 !important; }
+  .kurve-cell.temp-erhoht input { color: #B45309 !important; font-weight: 600 !important; }
+  .kurve-cell.temp-kalt   input { color: #1e40af !important; font-weight: 600 !important; }
   .kurve-table tbody tr:not(.group-hd):hover .kurve-cell:not([class*=spo2]):not(.overdue):not(.pflicht-rot) {
     filter: brightness(0.97);
   }
@@ -542,7 +548,8 @@ function setCellValue(inp, val, silent) {
   inp.value = val;
   const td = document.getElementById('td-' + inp.dataset.key + '-' + inp.dataset.hour);
   if (!td) return;
-  td.classList.remove('filled', 'spo2-warn', 'spo2-alert', 'overdue', 'pflicht-rot');
+  td.classList.remove('filled', 'spo2-warn', 'spo2-alert', 'overdue', 'pflicht-rot', 'temp-fieber', 'temp-erhoht', 'temp-kalt');
+  td.removeAttribute('title');
   if (val && val.trim()) {
     td.classList.add('filled');
     if (inp.dataset.type === 'spo2') {
@@ -550,6 +557,14 @@ function setCellValue(inp, val, silent) {
       if (!isNaN(n)) {
         if (n < 90) td.classList.add('spo2-alert');
         else if (n < 92) td.classList.add('spo2-warn');
+      }
+    }
+    if (inp.dataset.key === 'temp') {
+      const t = parseFloat(val);
+      if (!isNaN(t)) {
+        if (t >= 38.5) { td.classList.add('temp-fieber'); td.title = 'Fieber!'; }
+        else if (t >= 37.5) { td.classList.add('temp-erhoht'); td.title = 'Erhöht'; }
+        else if (t < 36.0) { td.classList.add('temp-kalt'); td.title = 'Unterkühlung'; }
       }
     }
   }

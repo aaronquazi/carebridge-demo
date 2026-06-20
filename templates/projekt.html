@@ -1,0 +1,707 @@
+{% extends "base.html" %}
+{% block title %}Über dieses Projekt{% endblock %}
+{% block page_title %}Über dieses Projekt{% endblock %}
+{% block page_subtitle %}CareBridge — Ein Praxisprojekt von Aaron Quazi{% endblock %}
+
+{% block content %}
+<style>
+  /* ── Full-bleed wrapper ── */
+  .pr-wrap {
+    margin: -24px -28px;
+    overflow: hidden;
+  }
+
+  /* ── Sections ── */
+  .pr-section {
+    padding: 64px 80px;
+  }
+  .pr-section-dark {
+    background: var(--ink);
+    color: #fff;
+    padding: 72px 80px;
+  }
+  .pr-section-gray {
+    background: var(--bg);
+    padding: 64px 80px;
+  }
+
+  /* ── Hero ── */
+  .pr-hero {
+    background: linear-gradient(135deg, #0A1628 0%, #0F1923 50%, #0D1F3A 100%);
+    padding: 80px 80px 72px;
+    text-align: center;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    position: relative;
+    overflow: hidden;
+  }
+  .pr-hero::before {
+    content: '';
+    position: absolute;
+    top: -60px; left: -60px;
+    width: 320px; height: 320px;
+    background: radial-gradient(circle, rgba(26,86,219,0.15) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .pr-hero::after {
+    content: '';
+    position: absolute;
+    bottom: -60px; right: -60px;
+    width: 280px; height: 280px;
+    background: radial-gradient(circle, rgba(13,122,92,0.1) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .pr-hero-logo {
+    font-family: var(--serif);
+    font-size: 52px;
+    font-style: italic;
+    color: #fff;
+    letter-spacing: -1px;
+    margin-bottom: 8px;
+    position: relative;
+  }
+  .pr-hero-byline {
+    font-size: 16px;
+    color: rgba(255,255,255,0.55);
+    margin-bottom: 28px;
+    font-weight: 300;
+    letter-spacing: 0.3px;
+  }
+  .pr-hero-roles {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 36px;
+  }
+  .pr-role-tag {
+    padding: 4px 14px;
+    border: 1px solid rgba(255,255,255,0.18);
+    border-radius: 20px;
+    font-size: 12px;
+    color: rgba(255,255,255,0.7);
+    background: rgba(255,255,255,0.05);
+    letter-spacing: 0.3px;
+  }
+  .pr-hero-desc {
+    max-width: 580px;
+    margin: 0 auto;
+    font-size: 16px;
+    color: rgba(255,255,255,0.7);
+    line-height: 1.8;
+    font-weight: 300;
+  }
+  .pr-hero-nav {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 40px;
+    flex-wrap: wrap;
+  }
+  .pr-nav-btn {
+    padding: 9px 20px;
+    border-radius: var(--radius);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s;
+    display: inline-block;
+  }
+  .pr-nav-btn-prim {
+    background: var(--blue);
+    color: #fff;
+    border: 1px solid var(--blue);
+  }
+  .pr-nav-btn-prim:hover { background: var(--blue-mid); }
+  .pr-nav-btn-sec {
+    background: transparent;
+    color: rgba(255,255,255,0.7);
+    border: 1px solid rgba(255,255,255,0.2);
+  }
+  .pr-nav-btn-sec:hover { background: rgba(255,255,255,0.08); color: #fff; }
+
+  /* ── Section headings ── */
+  .pr-h2 {
+    font-size: 26px;
+    font-weight: 600;
+    color: var(--ink);
+    margin-bottom: 6px;
+    letter-spacing: -0.3px;
+  }
+  .pr-h2-dark {
+    font-size: 26px;
+    font-weight: 600;
+    color: #fff;
+    margin-bottom: 6px;
+  }
+  .pr-subh {
+    font-size: 15px;
+    color: var(--ink-3);
+    margin-bottom: 36px;
+    font-weight: 300;
+  }
+  .pr-subh-dark {
+    font-size: 15px;
+    color: rgba(255,255,255,0.5);
+    margin-bottom: 36px;
+  }
+
+  /* ── Problem section ── */
+  .pr-problem-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-top: 32px;
+  }
+  .pr-problem-card {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 24px;
+    background: var(--surface);
+  }
+  .pr-problem-card.bad  { border-top: 3px solid var(--red); }
+  .pr-problem-card.good { border-top: 3px solid var(--green); }
+  .pr-problem-title {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .pr-problem-title.bad  { color: var(--red); }
+  .pr-problem-title.good { color: var(--green); }
+  .pr-item {
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border-soft);
+  }
+  .pr-item:last-child { border-bottom: none; }
+  .pr-item-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--ink);
+    margin-bottom: 4px;
+  }
+  .pr-item-sub {
+    font-size: 12px;
+    color: var(--ink-3);
+    line-height: 1.5;
+  }
+  .pr-item-sub.bad-sub { color: #B45309; }
+  .pr-item-sub.good-sub { color: var(--green); }
+  .pr-problem-footer {
+    margin-top: 14px;
+    padding: 12px 14px;
+    border-radius: var(--radius);
+    font-size: 12px;
+    line-height: 1.6;
+  }
+  .pr-problem-footer.bad  { background: var(--red-light); color: var(--red); }
+  .pr-problem-footer.good { background: var(--green-light); color: var(--green); }
+
+  /* ── Modules grid ── */
+  .pr-modules-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-top: 32px;
+  }
+  .pr-module-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 18px 20px;
+    transition: box-shadow 0.15s, transform 0.15s;
+  }
+  .pr-module-card:hover {
+    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+    transform: translateY(-2px);
+  }
+  .pr-module-icon { font-size: 24px; margin-bottom: 10px; }
+  .pr-module-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink);
+    margin-bottom: 6px;
+  }
+  .pr-module-desc {
+    font-size: 12px;
+    color: var(--ink-3);
+    line-height: 1.6;
+  }
+
+  /* ── Tech cards ── */
+  .pr-tech-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    margin-top: 32px;
+    margin-bottom: 24px;
+  }
+  .pr-tech-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 24px 22px;
+  }
+  .pr-tech-layer {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: var(--ink-3);
+    margin-bottom: 6px;
+  }
+  .pr-tech-icon { font-size: 28px; margin-bottom: 10px; }
+  .pr-tech-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ink);
+    margin-bottom: 8px;
+  }
+  .pr-tech-desc {
+    font-size: 13px;
+    color: var(--ink-3);
+    line-height: 1.6;
+  }
+  .pr-tech-banner {
+    background: var(--blue-light);
+    border: 1px solid #BFDBFE;
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    font-size: 13px;
+    color: var(--blue);
+    line-height: 1.7;
+  }
+
+  /* ── Author ── */
+  .pr-author-inner { max-width: 660px; margin: 0 auto; text-align: center; }
+  .pr-avatar {
+    width: 72px; height: 72px;
+    border-radius: 50%;
+    background: var(--blue);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 26px; font-weight: 700; color: #fff;
+    margin: 0 auto 20px;
+    font-family: var(--mono);
+    box-shadow: 0 0 0 4px rgba(26,86,219,0.25);
+  }
+  .pr-author-name {
+    font-family: var(--serif);
+    font-size: 36px;
+    font-style: italic;
+    color: #fff;
+    margin-bottom: 6px;
+    letter-spacing: -0.5px;
+  }
+  .pr-author-title {
+    font-size: 14px;
+    color: rgba(255,255,255,0.55);
+    margin-bottom: 28px;
+    letter-spacing: 0.5px;
+  }
+  .pr-tags {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+  .pr-tag-exp {
+    padding: 5px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    background: rgba(26,86,219,0.25);
+    color: #93C5FD;
+    border: 1px solid rgba(26,86,219,0.4);
+  }
+  .pr-tag-it {
+    padding: 5px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    background: rgba(13,122,92,0.2);
+    color: #6EE7B7;
+    border: 1px solid rgba(13,122,92,0.3);
+  }
+  .pr-divider {
+    height: 1px;
+    background: rgba(255,255,255,0.1);
+    margin: 28px 0;
+  }
+  .pr-quote {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-left: 3px solid var(--blue-mid);
+    border-radius: var(--radius);
+    padding: 24px 28px;
+    text-align: left;
+    font-size: 14px;
+    color: rgba(255,255,255,0.75);
+    line-height: 1.85;
+    margin-bottom: 28px;
+    font-style: italic;
+  }
+  .pr-quote-sig {
+    font-size: 13px;
+    color: rgba(255,255,255,0.45);
+    font-style: normal;
+    margin-top: 12px;
+  }
+  .pr-contact-links {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .pr-contact-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 18px;
+    border: 1px solid rgba(255,255,255,0.18);
+    border-radius: var(--radius);
+    font-size: 13px;
+    color: rgba(255,255,255,0.75);
+    text-decoration: none;
+    background: rgba(255,255,255,0.05);
+    transition: all 0.15s;
+  }
+  .pr-contact-link:hover {
+    background: rgba(255,255,255,0.1);
+    color: #fff;
+    border-color: rgba(255,255,255,0.35);
+  }
+
+  /* ── Print ── */
+  @media print {
+    .pr-hero, .pr-section-dark { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .pr-module-card:hover { transform: none; box-shadow: none; }
+    .pr-nav-btn, .pr-hero-nav { display: none; }
+  }
+</style>
+
+<div class="pr-wrap">
+
+  <!-- ══ SECTION 1: HERO ══ -->
+  <section class="pr-hero">
+    <div class="pr-hero-logo">CareBridge</div>
+    <div class="pr-hero-byline">Ein Praxisprojekt von Aaron Quazi</div>
+    <div class="pr-hero-roles">
+      <span class="pr-role-tag">Examinierter Pflegefachmann</span>
+      <span class="pr-role-tag">Außerklinische Intensivpflege</span>
+      <span class="pr-role-tag">Beatmungspflege</span>
+      <span class="pr-role-tag">Healthcare IT</span>
+    </div>
+    <p class="pr-hero-desc">
+      Dieses Projekt entstand aus dem Alltag der Beatmungspflege.
+      Es zeigt, wie papierbasierte Pflegeprozesse digitalisiert werden können —
+      praxisnah, prozessorientiert und mit echtem Fachverständnis.
+    </p>
+    <div class="pr-hero-nav">
+      <a href="/dashboard" class="pr-nav-btn pr-nav-btn-prim">Demo starten →</a>
+      <a href="#problem" class="pr-nav-btn pr-nav-btn-sec">Das Problem ↓</a>
+      <a href="#autor" class="pr-nav-btn pr-nav-btn-sec">Über den Autor ↓</a>
+    </div>
+  </section>
+
+  <!-- ══ SECTION 2: DAS PROBLEM ══ -->
+  <section class="pr-section" id="problem" style="background:var(--surface)">
+    <div class="pr-h2">Das Ausgangsproblem</div>
+    <div class="pr-subh">Beatmungspflege heute: Viele Formulare, viele Lücken, kein System das prüft</div>
+
+    <div class="pr-problem-grid">
+      <!-- Links: Papier -->
+      <div class="pr-problem-card bad">
+        <div class="pr-problem-title bad">📄 So läuft es heute (papierbasiert)</div>
+
+        <div class="pr-item">
+          <div class="pr-item-title">📄 Intensivkurve (Papier)</div>
+          <div class="pr-item-sub bad-sub">→ Vitalwerte von Hand eingetragen<br>→ Kein automatischer Alarm bei Lücken</div>
+        </div>
+        <div class="pr-item">
+          <div class="pr-item-title">📄 Leistungsnachweis (Papier)</div>
+          <div class="pr-item-sub bad-sub">→ Handzeichen der Pflegekraft<br>→ Keine Zeitstempel-Kontrolle</div>
+        </div>
+        <div class="pr-item">
+          <div class="pr-item-title">📄 Beatmungsverordnung (Papier)</div>
+          <div class="pr-item-sub bad-sub">→ Alarmgrenzen nicht digital verfügbar<br>→ Keine automatische Prüfung</div>
+        </div>
+        <div class="pr-item">
+          <div class="pr-item-title">📄 Medikamentenplan (Papier)</div>
+          <div class="pr-item-sub bad-sub">→ Getrennt vom restlichen Dokumentationssystem<br>→ Keine Wechselwirkungs-Hinweise</div>
+        </div>
+
+        <div class="pr-problem-footer bad">
+          ❌ Problem: Mehrfachdokumentation, Lücken werden erst bei der Übergabe erkannt,
+          kein System prüft Vollständigkeit.
+        </div>
+      </div>
+
+      <!-- Rechts: Digital -->
+      <div class="pr-problem-card good">
+        <div class="pr-problem-title good">✅ So funktioniert CareBridge (digital)</div>
+
+        <div class="pr-item">
+          <div class="pr-item-title">✅ Intensivkurve digital</div>
+          <div class="pr-item-sub good-sub">→ Pflichtfelder rot wenn überfällig<br>→ Automatische 2h-Intervall-Kontrolle</div>
+        </div>
+        <div class="pr-item">
+          <div class="pr-item-title">✅ Leistungsnachweis digital</div>
+          <div class="pr-item-sub good-sub">→ Kürzel + Zeitstempel bei jedem Eintrag<br>→ Zeitfenster-Prüfung (zu früh / pünktlich / zu spät)</div>
+        </div>
+        <div class="pr-item">
+          <div class="pr-item-title">✅ Beatmungsverordnung digital</div>
+          <div class="pr-item-sub good-sub">→ Alarmgrenzen aus ärztlicher Verordnung<br>→ SpO₂-Warnung direkt in der Kurve</div>
+        </div>
+        <div class="pr-item">
+          <div class="pr-item-title">✅ Compliance Engine</div>
+          <div class="pr-item-sub good-sub">→ Dashboard zeigt offene Dokumentationen<br>→ Übergabe-Ampel bei kritischen Lücken</div>
+        </div>
+
+        <div class="pr-problem-footer good">
+          ✅ Lösung: Ein System prüft Vollständigkeit in Echtzeit — Fehler werden
+          verhindert, nicht erst bei der Übergabe entdeckt.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ SECTION 3: MODULE ══ -->
+  <section class="pr-section-gray" id="module">
+    <div class="pr-h2">Was CareBridge kann</div>
+    <div class="pr-subh">12 Module — alle entwickelt aus realer Pflegepraxis</div>
+
+    <div class="pr-modules-grid">
+      <div class="pr-module-card">
+        <div class="pr-module-icon">📊</div>
+        <div class="pr-module-name">Dashboard</div>
+        <div class="pr-module-desc">Patientenübersicht, Beatmungsstatus, Compliance-Ampel, offene Aufgaben auf einen Blick</div>
+      </div>
+      <div class="pr-module-card">
+        <div class="pr-module-icon">📈</div>
+        <div class="pr-module-name">Intensivkurve</div>
+        <div class="pr-module-desc">Editierbare Stundenansicht 07–22 Uhr, Pflichtfeld-Rot bei Überfälligkeit, SpO₂-Alarmgrenzen visuell</div>
+      </div>
+      <div class="pr-module-card">
+        <div class="pr-module-icon">✅</div>
+        <div class="pr-module-name">Leistungsnachweis</div>
+        <div class="pr-module-desc">Pflegeleistungen abhaken mit Kürzel, Zeitfenster-Kontrolle, Begründung bei Verspätung, Rückgängig-Funktion</div>
+      </div>
+      <div class="pr-module-card">
+        <div class="pr-module-icon">🔄</div>
+        <div class="pr-module-name">Übergabe</div>
+        <div class="pr-module-desc">SBAR-Format mit echten Messwerten, Freigabe-Ampel grün/gelb/rot, automatische Vollständigkeitsprüfung</div>
+      </div>
+      <div class="pr-module-card">
+        <div class="pr-module-icon">🖨</div>
+        <div class="pr-module-name">Arztübergabe</div>
+        <div class="pr-module-desc">14-Tage Verlaufsübersicht druckfertig, Medikamentenplan, Beatmungsverordnung, Notfallplan integriert</div>
+      </div>
+      <div class="pr-module-card">
+        <div class="pr-module-icon">💊</div>
+        <div class="pr-module-name">Medikamentenplan</div>
+        <div class="pr-module-desc">Nüchtern-Hinweise, Wechselwirkungen, BTM-Kennzeichnung mit Vier-Augen-Prinzip. Akustische Warnung 10 Minuten vor BTM-Gabe. Zwei Kürzel erforderlich zur Bestätigung.</div>
+      </div>
+      <div class="pr-module-card">
+        <div class="pr-module-icon">🫁</div>
+        <div class="pr-module-name">Beatmungsverordnung</div>
+        <div class="pr-module-desc">IPAP/EPAP/Vt, Alarmgrenzen, Sauerstofftherapie Soll/Bedarf, Trachealkanülen-Management mit Wechseldatum</div>
+      </div>
+      <div class="pr-module-card">
+        <div class="pr-module-icon">📋</div>
+        <div class="pr-module-name">SIS</div>
+        <div class="pr-module-desc">Strukturierte Informationssammlung nach gesetzlichem Standard, 6 Themenfelder mit Ampel-Status und Fortschrittsanzeige</div>
+      </div>
+      <div class="pr-module-card">
+        <div class="pr-module-icon">📝</div>
+        <div class="pr-module-name">Pflegebericht</div>
+        <div class="pr-module-desc">Chronologisches Journal, 6 Farbkategorien (Beatmung/Pflege/Besonderheit/…), Filter nach Kategorie und Datum</div>
+      </div>
+      <div class="pr-module-card">
+        <div class="pr-module-icon">⚠</div>
+        <div class="pr-module-name">Ereignisdokumentation</div>
+        <div class="pr-module-desc">Sturzprotokoll, Beatmungszwischenfälle, vollständige Ereignisdokumentation mit Sofortmaßnahmen und Folgemaßnahmen</div>
+      </div>
+      <div class="pr-module-card">
+        <div class="pr-module-icon">🩹</div>
+        <div class="pr-module-name">Wunddokumentation</div>
+        <div class="pr-module-desc">Tracheostomapflege, Dekubitus, Verlaufsdokumentation mit Ampel-Status, Foto-Platzhalter für Bilddokumentation</div>
+      </div>
+      <div class="pr-module-card">
+        <div class="pr-module-icon">🏥</div>
+        <div class="pr-module-name">Therapien &amp; Dokumente</div>
+        <div class="pr-module-desc">Physio/Ergo/Logo Verlauf, Arztbriefe, Befunde, Überweisungen mit Vorschau und Druckfunktion</div>
+      </div>
+      <div class="pr-module-card">
+        <div class="pr-module-icon">🔗</div>
+        <div class="pr-module-name">FHIR Vorschau</div>
+        <div class="pr-module-desc">Patientendaten als FHIR R4 Ressourcen — Patient, Observation, MedicationRequest, CarePlan. Interoperabilität demonstriert.</div>
+      </div>
+      <div class="pr-module-card">
+        <div class="pr-module-icon">📊</div>
+        <div class="pr-module-name">Qualitätsdashboard</div>
+        <div class="pr-module-desc">Management-Sicht: Dokumentationsquote, Compliance-Kurven, Alarmereignisse, Übergabequalität nach Pflegekraft.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ SECTION 4: TECHNOLOGIE ══ -->
+  <section class="pr-section" id="technologie" style="background:var(--surface)">
+    <div class="pr-h2">Technischer Aufbau</div>
+    <div class="pr-subh">Bewusst schlanker Stack — maximales Verständnis, minimale Abhängigkeiten</div>
+
+    <div class="pr-tech-grid">
+      <div class="pr-tech-card">
+        <div class="pr-tech-layer">Backend</div>
+        <div class="pr-tech-icon">🐍</div>
+        <div class="pr-tech-title">Python / Flask</div>
+        <div class="pr-tech-desc">REST API, Session-Management, JSON-Datenspeicherung, Compliance-Engine als eigenständiges Modul, Jinja2-Templates</div>
+      </div>
+      <div class="pr-tech-card">
+        <div class="pr-tech-layer">Frontend</div>
+        <div class="pr-tech-icon">🎨</div>
+        <div class="pr-tech-title">HTML / CSS / JavaScript</div>
+        <div class="pr-tech-desc">Responsives Design ohne Framework, Chart.js für Vitalwert-Kurven (14-Tage-Verlauf), alle Modals und Interaktionen nativ</div>
+      </div>
+      <div class="pr-tech-card">
+        <div class="pr-tech-layer">Deployment</div>
+        <div class="pr-tech-icon">☁</div>
+        <div class="pr-tech-title">GitHub + Render.com</div>
+        <div class="pr-tech-desc">Versionskontrolle mit Git, automatisches Deployment bei Push, kostenlos gehostet, CI/CD-Pipeline</div>
+      </div>
+    </div>
+
+    <div class="pr-tech-card" style="margin-top:16px;border:1px solid #BFDBFE;background:#EBF1FF">
+      <div class="pr-tech-layer" style="color:var(--blue)">Standard</div>
+      <div class="pr-tech-icon">🔗</div>
+      <div class="pr-tech-title" style="color:var(--blue)">FHIR R4 — HL7 Interoperabilität</div>
+      <div class="pr-tech-desc">Internationaler Healthcare-Interoperabilitätsstandard. CareBridge demonstriert Patient, Observation, MedicationRequest und CarePlan als standardkonforme FHIR R4 Ressourcen.</div>
+    </div>
+
+    <div class="pr-tech-banner" style="margin-top:16px">
+      💡 <strong>Produktivszenario:</strong> In einer Produktivumgebung würde CareBridge auf einer zertifizierten
+      Healthcare-Cloud laufen (z.B. Azure Health Data Services), mit echter Datenbank (PostgreSQL),
+      DSGVO-konformer Datenspeicherung und einem Login-System mit Rollenkonzept
+      (Pflegekraft · Arzt · Administration). Die aktuelle Architektur ist bewusst so gestaltet,
+      dass dieser Umbau ohne Neuschreiben der Geschäftslogik möglich wäre.
+    </div>
+  </section>
+
+  <!-- ══ SECTION 5: ÜBER DEN AUTOR ══ -->
+  <section class="pr-section-dark" id="autor">
+    <div class="pr-author-inner">
+      <div class="pr-avatar">AQ</div>
+      <div class="pr-author-name">Aaron Quazi</div>
+      <div class="pr-author-title">Examinierter Pflegefachmann · Fachabi IT</div>
+
+      <div class="pr-tags">
+        <span class="pr-tag-exp">Außerklinische Intensivpflege</span>
+        <span class="pr-tag-exp">Beatmungspflege</span>
+        <span class="pr-tag-exp">Tracheostomaversorgung</span>
+        <span class="pr-tag-exp">Vitalzeichenüberwachung</span>
+        <span class="pr-tag-exp">Pflegedokumentation</span>
+        <span class="pr-tag-exp">Beatmungs-WG</span>
+      </div>
+
+      <div class="pr-divider"></div>
+
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:1.2px;color:rgba(255,255,255,0.35);margin-bottom:14px">
+        Interesse &amp; Ziele
+      </div>
+      <div class="pr-tags">
+        <span class="pr-tag-it">Healthcare IT</span>
+        <span class="pr-tag-it">Application Specialist</span>
+        <span class="pr-tag-it">Clinical Application Specialist</span>
+        <span class="pr-tag-it">Digital Health</span>
+        <span class="pr-tag-it">Prozessoptimierung</span>
+        <span class="pr-tag-it">KI-Systeme</span>
+        <span class="pr-tag-it">Python</span>
+        <span class="pr-tag-it">Claude Code</span>
+      </div>
+
+      <div class="pr-divider"></div>
+
+      <div class="pr-quote">
+        Ich habe dieses Projekt gebaut, weil ich die Lücke zwischen Pflegepraxis und
+        Digitalisierung aus eigener Erfahrung kenne. In der außerklinischen Beatmungspflege
+        entstehen Fehler nicht nur durch fehlende Systeme — sondern auch durch mangelnde
+        Struktur, fehlende Kontrolle und lückenhafte Dokumentation im Alltag. CareBridge
+        begegnet genau diesem Problem: automatische Warnungen, Zeitstempel bei jeder Aktion,
+        Vier-Augen-Prinzip bei BTM-Gaben und eine Compliance-Engine, die Lücken sichtbar
+        macht bevor sie zur Gefahr werden.
+        <br><br>
+        Dieses Projekt habe ich gemeinsam mit Claude und Claude Code von Anthropic entwickelt.
+        Ich verstehe die Anwendung, kann sie erklären und gezielt weiterentwickeln — die
+        technische Umsetzung erfolgt durch KI auf meine fachliche Anforderung hin.
+        Für mich zeigt das wie moderne Werkzeuge es ermöglichen, Fachwissen aus der Pflege
+        direkt in digitale Lösungen zu übersetzen — ohne dass die Fachkompetenz an der
+        Technik scheitert.
+        <div class="pr-quote-sig">— Aaron Quazi</div>
+      </div>
+
+      <div class="pr-contact-links">
+        <a href="mailto:aaron.quazi@gmail.com" class="pr-contact-link">
+          📧 aaron.quazi@gmail.com
+        </a>
+        <a href="https://github.com" class="pr-contact-link" target="_blank">
+          💼 GitHub: aaronquazi / carebridge-demo
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ SECTION 6: GEPLANTE FEATURES ══ -->
+  <section class="pr-section-gray" id="roadmap">
+    <div class="pr-h2">In Entwicklung &amp; Geplant</div>
+    <div class="pr-subh">Nächste Schritte auf dem Weg zur produktionsreifen Anwendung</div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin-top:8px">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow)">
+        <div style="font-size:16px;margin-bottom:8px">🔜</div>
+        <div style="font-size:13px;font-weight:600;color:var(--ink);margin-bottom:4px">Tablet-optimierte Ansicht</div>
+        <div style="font-size:12px;color:var(--ink-3);line-height:1.5">Responsive Layout für iPad-Nutzung direkt am Patientenbett — primärer Einsatzort in der Beatmungspflege</div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow)">
+        <div style="font-size:16px;margin-bottom:8px">🔜</div>
+        <div style="font-size:13px;font-weight:600;color:var(--ink);margin-bottom:4px">Echte FHIR REST API</div>
+        <div style="font-size:12px;color:var(--ink-3);line-height:1.5">Vollständige HL7 FHIR R4 Endpunkte zur direkten Anbindung an KIS und PVS-Systeme</div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow)">
+        <div style="font-size:16px;margin-bottom:8px">🔜</div>
+        <div style="font-size:13px;font-weight:600;color:var(--ink);margin-bottom:4px">Login-System mit Rollenkonzept</div>
+        <div style="font-size:12px;color:var(--ink-3);line-height:1.5">Separate Berechtigungen für Pflegekraft, Arzt, Pflegeleitung und Administration</div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow)">
+        <div style="font-size:16px;margin-bottom:8px">🔜</div>
+        <div style="font-size:13px;font-weight:600;color:var(--ink);margin-bottom:4px">DSGVO-konforme Datenbankanbindung</div>
+        <div style="font-size:12px;color:var(--ink-3);line-height:1.5">Ablösung der JSON-Datenhaltung durch PostgreSQL mit Verschlüsselung und Audit-Log</div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow)">
+        <div style="font-size:16px;margin-bottom:8px">🔜</div>
+        <div style="font-size:13px;font-weight:600;color:var(--ink);margin-bottom:4px">KIS-Anbindung</div>
+        <div style="font-size:12px;color:var(--ink-3);line-height:1.5">Schnittstelle zu Krankenhausinformationssystemen für automatischen Datenaustausch bei Krankenhauseinweisung</div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow);border-left:3px solid var(--amber)">
+        <div style="font-size:16px;margin-bottom:8px">💾</div>
+        <div style="font-size:13px;font-weight:600;color:var(--ink);margin-bottom:4px">Persistente Datenspeicherung</div>
+        <div style="font-size:12px;color:var(--ink-3);line-height:1.5">
+          Ablösung der JSON-Datenhaltung durch PostgreSQL mit Verschlüsselung und Audit-Log.<br>
+          <span style="color:var(--amber);font-weight:500">Aktuell:</span> Demo-Daten werden bei Server-Neustart zurückgesetzt.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <div style="padding:32px 80px;background:var(--surface);border-top:1px solid var(--border-soft);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px">
+    <div>
+      <div style="font-family:var(--serif);font-size:20px;font-style:italic;color:var(--ink);margin-bottom:4px">CareBridge</div>
+      <div style="font-size:12px;color:var(--ink-3)">Ein Praxisprojekt von Aaron Quazi · 2026 · Demo — Keine Echtdaten</div>
+    </div>
+    <div style="display:flex;gap:10px">
+      <a href="/dashboard" style="padding:8px 16px;background:var(--blue);color:#fff;border-radius:var(--radius);font-size:13px;text-decoration:none;font-weight:500">Demo öffnen →</a>
+      <a href="mailto:aaron.quazi@gmail.com" style="padding:8px 16px;border:1px solid var(--border);color:var(--ink);border-radius:var(--radius);font-size:13px;text-decoration:none">Kontakt aufnehmen</a>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

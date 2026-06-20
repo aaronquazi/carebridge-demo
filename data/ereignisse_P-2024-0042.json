@@ -49,5 +49,22 @@
     "angehoerige_wann": "",
     "folgemassnahmen": "",
     "kuerzel": "AQ"
+  },
+  {
+    "id": "er4_1781981244",
+    "typ": "Arzt informiert",
+    "datum": "2026-06-20",
+    "uhrzeit": "20:47",
+    "ort": "",
+    "beschreibung": "SpO? kurz auf 91% gefallen.",
+    "sofortmassnahmen": "Repositionierung, wieder 95%",
+    "arzt_informiert": true,
+    "arzt_wer": "",
+    "arzt_wann": "",
+    "angehoerige_informiert": false,
+    "angehoerige_wer": "",
+    "angehoerige_wann": "",
+    "folgemassnahmen": "",
+    "kuerzel": "AQ"
   }
 ]
